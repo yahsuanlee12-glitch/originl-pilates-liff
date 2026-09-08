@@ -51,6 +51,10 @@
       <div class="pool-grid">
         <div class="pool"><div class="num" id="poolA">0</div><div class="label">皮拉提斯課</div></div>
         <div class="pool"><div class="num" id="poolC">0</div><div class="label">體驗課</div></div>
+        <!-- 團課 1對2／1對3／1對4：有堂數才顯示（2026-09-08） -->
+        <div class="pool" id="poolG2" style="display:none"><div class="num">0</div><div class="label">團課 1對2</div></div>
+        <div class="pool" id="poolG3" style="display:none"><div class="num">0</div><div class="label">團課 1對3</div></div>
+        <div class="pool" id="poolG4" style="display:none"><div class="num">0</div><div class="label">團課 1對4</div></div>
       </div>
     </div>
     <div class="card">
@@ -84,6 +88,13 @@
     document.getElementById('greeting').textContent = (data.name || '') + ' 你好';
     document.getElementById('poolA').textContent = data.pools['皮拉提斯課／按摩課'] || 0;
     document.getElementById('poolC').textContent = data.pools['體驗課'] || 0;
+    // 團課三個池：買過（>0）才顯示，免得每個人都看到三個 0
+    [['poolG2','團課1對2'],['poolG3','團課1對3'],['poolG4','團課1對4']].forEach(function(p) {
+      var el = document.getElementById(p[0]);
+      var n = Number(data.pools[p[1]]) || 0;
+      el.style.display = n > 0 ? '' : 'none';
+      el.querySelector('.num').textContent = n;
+    });
     var list = document.getElementById('bookingList');
     list.innerHTML = '';
     if (!data.upcoming || data.upcoming.length === 0) {
