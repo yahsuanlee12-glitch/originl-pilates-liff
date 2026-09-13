@@ -113,22 +113,32 @@
   function apiUrl(params) { return API_BASE + '?' + params + '&_=' + Date.now(); }
   // 2026-09-13：Apps Script 的回應要經過 script.googleusercontent.com 這一跳，那一跳偶爾會回 404 的 HTML
   // （後端其實有跑完）。實測連打 3 次有 2 次中獎。所以：不是 JSON 或連線失敗就自動重試，最多 4 次。
+  // 2026-09-13 v2：後端 V9 正常一趟約 0.5～1 s，所以每一次請求最多等 ATTEMPT_TIMEOUT_MS 就砍掉重來
+  // （之前壞掉那一跳會吊著 10～27 秒才回 404，四次加起來等太久）。重試間隔也縮短。
+  var ATTEMPT_TIMEOUT_MS = 6000;
+  var MAX_ATTEMPTS = 4;
   function apiGet(params) {
     var attempt = 0;
     function once() {
       attempt++;
-      return fetch(apiUrl(params), { cache: 'no-store' })
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, ATTEMPT_TIMEOUT_MS) : null;
+      var opts = { cache: 'no-store' };
+      if (ctrl) opts.signal = ctrl.signal;
+      return fetch(apiUrl(params), opts)
         .then(function(r) { return r.text(); })
         .then(function(txt) {
+          if (timer) clearTimeout(timer);
           var t = txt.trim();
           if (t.charAt(0) !== '{') throw new Error('non-json');
           return JSON.parse(t);
         })
         .catch(function(err) {
-          if (attempt >= 4) throw err;
+          if (timer) clearTimeout(timer);
+          if (attempt >= MAX_ATTEMPTS) throw err;
           var lb = document.getElementById('loading');
           if (lb) lb.textContent = '連線中，再試一次…（' + attempt + '）';
-          return new Promise(function(res) { setTimeout(res, 800 * attempt); }).then(once);
+          return new Promise(function(res) { setTimeout(res, 300 * attempt); }).then(once);
         });
     }
     return once();
