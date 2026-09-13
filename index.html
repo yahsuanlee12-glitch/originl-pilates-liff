@@ -51,10 +51,10 @@
       <div class="pool-grid">
         <div class="pool"><div class="num" id="poolA">0</div><div class="label">皮拉提斯課</div></div>
         <div class="pool"><div class="num" id="poolC">0</div><div class="label">體驗課</div></div>
-        <!-- 團課 1對2／1對3／1對4：有堂數才顯示（2026-09-08） -->
-        <div class="pool" id="poolG2" style="display:none"><div class="num">0</div><div class="label">團課 1對2</div></div>
-        <div class="pool" id="poolG3" style="display:none"><div class="num">0</div><div class="label">團課 1對3</div></div>
-        <div class="pool" id="poolG4" style="display:none"><div class="num">0</div><div class="label">團課 1對4</div></div>
+        <!-- 團課 1對2／1對3／1對4：一律顯示（2026-09-13 John 定案；原本 0 堂不顯示） -->
+        <div class="pool" id="poolG2"><div class="num">0</div><div class="label">團課 1對2</div></div>
+        <div class="pool" id="poolG3"><div class="num">0</div><div class="label">團課 1對3</div></div>
+        <div class="pool" id="poolG4"><div class="num">0</div><div class="label">團課 1對4</div></div>
       </div>
     </div>
     <div class="card">
@@ -88,12 +88,9 @@
     document.getElementById('greeting').textContent = (data.name || '') + ' 你好';
     document.getElementById('poolA').textContent = data.pools['皮拉提斯課／按摩課'] || 0;
     document.getElementById('poolC').textContent = data.pools['體驗課'] || 0;
-    // 團課三個池：買過（>0）才顯示，免得每個人都看到三個 0
+    // 團課三個池：一律顯示（2026-09-13 John 定案）
     [['poolG2','團課1對2'],['poolG3','團課1對3'],['poolG4','團課1對4']].forEach(function(p) {
-      var el = document.getElementById(p[0]);
-      var n = Number(data.pools[p[1]]) || 0;
-      el.style.display = n > 0 ? '' : 'none';
-      el.querySelector('.num').textContent = n;
+      document.getElementById(p[0]).querySelector('.num').textContent = Number(data.pools[p[1]]) || 0;
     });
     var list = document.getElementById('bookingList');
     list.innerHTML = '';
@@ -113,16 +110,37 @@
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'block';
   }
-  function apiUrl(params) { return API_BASE + '?' + params; }
+  function apiUrl(params) { return API_BASE + '?' + params + '&_=' + Date.now(); }
+  // 2026-09-13：Apps Script 的回應要經過 script.googleusercontent.com 這一跳，那一跳偶爾會回 404 的 HTML
+  // （後端其實有跑完）。實測連打 3 次有 2 次中獎。所以：不是 JSON 或連線失敗就自動重試，最多 4 次。
+  function apiGet(params) {
+    var attempt = 0;
+    function once() {
+      attempt++;
+      return fetch(apiUrl(params), { cache: 'no-store' })
+        .then(function(r) { return r.text(); })
+        .then(function(txt) {
+          var t = txt.trim();
+          if (t.charAt(0) !== '{') throw new Error('non-json');
+          return JSON.parse(t);
+        })
+        .catch(function(err) {
+          if (attempt >= 4) throw err;
+          var lb = document.getElementById('loading');
+          if (lb) lb.textContent = '連線中，再試一次…（' + attempt + '）';
+          return new Promise(function(res) { setTimeout(res, 800 * attempt); }).then(once);
+        });
+    }
+    return once();
+  }
   function fetchData() {
-    fetch(apiUrl('action=data&idToken=' + encodeURIComponent(idToken)))
-      .then(function(r) { return r.json(); })
+    apiGet('action=data&idToken=' + encodeURIComponent(idToken))
       .then(function(data) {
         if (data.error) { showError(data.error); return; }
         if (data.needBind) { showBindView(); return; }
         renderMain(data);
       })
-      .catch(function() { showError('讀取資料失敗，請稍後再試一次'); });
+      .catch(function() { showError('讀取資料失敗，請關閉後重新開啟這個頁面'); });
   }
   document.getElementById('bindBtn').addEventListener('click', function() {
     var phone = document.getElementById('phoneInput').value.trim();
@@ -131,8 +149,7 @@
     errEl.textContent = '';
     if (!phone) { errEl.textContent = '請輸入手機號碼'; return; }
     btn.disabled = true;
-    fetch(apiUrl('action=bind&idToken=' + encodeURIComponent(idToken) + '&phone=' + encodeURIComponent(phone)))
-      .then(function(r) { return r.json(); })
+    apiGet('action=bind&idToken=' + encodeURIComponent(idToken) + '&phone=' + encodeURIComponent(phone))
       .then(function(data) {
         btn.disabled = false;
         if (data.error) { errEl.textContent = data.error; return; }
