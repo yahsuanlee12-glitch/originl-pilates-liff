@@ -265,7 +265,9 @@
   function fetchData() {
     apiGet('action=' + (ROLE === 'coach' ? 'coachdata' : 'data') + '&idToken=' + encodeURIComponent(idToken))
       .then(function(data) {
+        if (data.error && /登入驗證失敗/.test(data.error)) { relogin(); return; }
         if (data.error) { showError(data.error); return; }
+        clearReloginFlag();
         if (data.needBind) { showBindView(); return; }
         if (ROLE === 'coach') renderCoach(data); else renderMain(data);
       })
@@ -286,8 +288,24 @@
       })
       .catch(function() { btn.disabled = false; errEl.textContent = '連線失敗，請稍後再試一次（' + diagText() + '）'; });
   });
+  // 2026-09-16 v6：LINE 的 ID Token 只有 1 小時效期。在 LINE App 裡每次開都會拿新的，但在電腦版／外部瀏覽器
+  // 登入狀態會留著、Token 卻過期了（liff.isLoggedIn() 仍是 true）→ 後端回「LINE 登入驗證失敗」。
+  // 處理：Token 過期（或 60 秒內要過期）就登出再登入一次（同一個網址轉回來）；後端說驗證失敗也做一次。
+  // sessionStorage 記一個旗標避免無限重導，成功載入後清掉。
+  function relogin() {
+    var already = false;
+    try { already = sessionStorage.getItem('lq_relogin') === '1'; } catch (e) {}
+    if (already) { showError('LINE 登入已過期，請關閉這個頁面後重新開啟'); return; }
+    try { sessionStorage.setItem('lq_relogin', '1'); } catch (e) {}
+    try { liff.logout(); } catch (e) {}
+    liff.login({ redirectUri: location.href });
+  }
+  function clearReloginFlag() { try { sessionStorage.removeItem('lq_relogin'); } catch (e) {} }
   liff.init({ liffId: liffId }).then(function() {
     if (!liff.isLoggedIn()) { liff.login(); return; }
+    var dec = null;
+    try { dec = liff.getDecodedIDToken(); } catch (e) {}
+    if (dec && dec.exp && dec.exp * 1000 < Date.now() + 60000) { relogin(); return; }
     idToken = liff.getIDToken();
     if (!idToken) { showError('無法取得 LINE 登入資訊，請重新開啟這個頁面'); return; }
     fetchData();
