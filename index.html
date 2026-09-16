@@ -86,7 +86,22 @@
   // /a/macros/optaiwan.com/ 不論匿名、登入 Gmail、登入公司帳號都正常。
   var API_BASE = 'https://script.google.com/a/macros/optaiwan.com/s/AKfycbz6EgDUSj8Ud7NaROGma1uVLlSdJgH1wG784JOym0grMDgfviRTuTp267sSuIPEKuix/exec';
   var idToken = null;
-  var ROLE = (/[?&]role=coach\b/.test(location.search)) ? 'coach' : 'member';   // 2026-09-16 教練版
+  // 2026-09-16 教練版：網址帶 ?role=coach 就走教練版。
+  // 2026-09-16 v5：LINE 登入轉址後（外部瀏覽器）原本的 query 會被包進 liffRedirectUri，
+  // 在 LINE 內第一次開啟則是包在 liff.state，所以這三個地方都要看。
+  var ROLE = 'member';
+  (function () {
+    function isCoach(q) { return /(^|[?&])role=coach(&|$)/.test(String(q || '').replace(/^\?/, '')); }
+    var q = location.search;
+    if (isCoach(q)) { ROLE = 'coach'; return; }
+    try {
+      var p = new URLSearchParams(q);
+      var st = p.get('liff.state') || '', ru = p.get('liffRedirectUri') || '';
+      if (isCoach(decodeURIComponent(st))) { ROLE = 'coach'; return; }
+      var ruq = decodeURIComponent(ru).split('?')[1] || '';
+      if (isCoach(ruq)) { ROLE = 'coach'; return; }
+    } catch (e) {}
+  })();
   function showError(msg) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'none';
@@ -164,7 +179,8 @@
   // （後端其實有跑完）。實測連打 3 次有 2 次中獎。所以：不是 JSON 或連線失敗就自動重試，最多 4 次。
   // 2026-09-13 v2：後端 V9 正常一趟約 0.5～1 s，所以每一次請求最多等 ATTEMPT_TIMEOUT_MS 就砍掉重來
   // （之前壞掉那一跳會吊著 10～27 秒才回 404，四次加起來等太久）。重試間隔也縮短。
-  var ATTEMPT_TIMEOUT_MS = 6000;
+  // 2026-09-16 v5：實測後端每趟 1～2 s，但 googleusercontent 那一跳偶爾吊 6～9 秒才回，6 秒會把好的回應也砍掉 → 放寬到 10 秒。
+  var ATTEMPT_TIMEOUT_MS = 10000;
   var MAX_ATTEMPTS = 4;
   function apiGet(params) {
     var attempt = 0;
