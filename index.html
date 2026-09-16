@@ -40,6 +40,13 @@
     .cls .m.none { color: #aaa; }
     .cls.past { opacity: .55; }
     .cls .tag { display: inline-block; font-size: 11px; color: #8a6d4b; border: 1px solid #d9c9b5; border-radius: 10px; padding: 0 6px; margin-left: 6px; vertical-align: 1px; }
+    /* 2026-09-16 v7.1：教練頁底部的日曆顏色對照＋排課規則（與日曆說明欄同一份，中英） */
+    .legend { background: #fff; border-radius: 12px; padding: 14px 16px; margin: 6px 0 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-size: 13px; color: #555; }
+    .legend h3 { margin: 0 0 8px; font-size: 14px; color: #333; }
+    .legend .row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+    .legend .sw { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 14px; }
+    .legend .en { color: #999; font-size: 12px; }
+    .legend .rule { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5ded4; line-height: 1.5; }
     .tabs { display: flex; gap: 8px; margin: 10px 0 4px; }
     .tabs button { flex: 1; padding: 8px 0; border-radius: 10px; border: 1px solid #d9c9b5; background: #fff; color: #8a6d4b; font-size: 14px; }
     .tabs button.on { background: #8a6d4b; color: #fff; }
@@ -86,6 +93,16 @@
     <div class="tabs" id="coachTabs"></div>
     <div class="month-sum" id="coachSum"></div>
     <div class="card" id="coachList"></div>
+    <!-- v7.1：顏色對照＋排課規則（2026-09-16 John 定案；與日曆說明欄 CALENDAR_COLOR_LEGEND_ 同一份） -->
+    <div class="legend">
+      <h3>日曆顏色對照｜Colour key</h3>
+      <div class="row"><span class="sw" style="background:#0b8043"></span>羅勒 Basil（深綠）＝皮拉提斯課 <span class="en">Pilates</span></div>
+      <div class="row"><span class="sw" style="background:#f6bf26"></span>香蕉 Banana（黃）＝體驗課 <span class="en">Trial</span></div>
+      <div class="row"><span class="sw" style="background:#3f51b5"></span>藍莓 Blueberry（深藍）＝團體課 <span class="en">Group 3–4</span></div>
+      <div class="row"><span class="sw" style="background:#039be5"></span>孔雀 Peacock（藍綠）＝團課1對2 <span class="en">Duo</span></div>
+      <div class="row"><span class="sw" style="background:#8e24aa"></span>葡萄 Grape（紫）＝禪柔 <span class="en">Gyrokinesis</span></div>
+      <div class="rule">系統會依標題自動上色，選錯也會改回。<br>排課：在日曆活動標題打會員編號（例如 A0001，多人用空格隔開），就會自動建預約、扣堂、發 LINE。<br><span class="en">Colours are set automatically from the title. Put member IDs in the event title (e.g. A0001 A0002); bookings, deductions and LINE notices are automatic.</span></div>
+    </div>
     <div class="sub" style="text-align:center">每天 20:00 會 LINE 推明日課表給你；有人預約或取消也會即時通知。</div>
   </div>
   <div id="fatalError" class="error" style="display:none;text-align:center;padding:40px 16px;"></div>
