@@ -102,7 +102,7 @@
       if (isCoach(ruq)) { ROLE = 'coach'; return; }
     } catch (e) {}
   })();
-  function showError(msg) {
+  function showError(msg, diag) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'none';
     document.getElementById('mainView').style.display = 'none';
@@ -110,6 +110,12 @@
     var el = document.getElementById('fatalError');
     el.style.display = 'block';
     el.textContent = msg;
+    if (diag) {
+      var d = document.createElement('div');
+      d.style.cssText = 'margin-top:14px;font-size:11px;color:#999;word-break:break-all;line-height:1.5;';
+      d.textContent = diag;
+      el.appendChild(d);
+    }
   }
   function fmtDateTime(iso) {
     var d = new Date(iso);
@@ -176,37 +182,85 @@
   }
   function apiUrl(params) { return API_BASE + '?' + params + '&_=' + Date.now(); }
   // 2026-09-13：Apps Script 的回應要經過 script.googleusercontent.com 這一跳，那一跳偶爾會回 404 的 HTML
-  // （後端其實有跑完）。實測連打 3 次有 2 次中獎。所以：不是 JSON 或連線失敗就自動重試，最多 4 次。
-  // 2026-09-13 v2：後端 V9 正常一趟約 0.5～1 s，所以每一次請求最多等 ATTEMPT_TIMEOUT_MS 就砍掉重來
-  // （之前壞掉那一跳會吊著 10～27 秒才回 404，四次加起來等太久）。重試間隔也縮短。
+  // （後端其實有跑完）。實測連打 3 次有 2 次中獎。所以：不是 JSON 或連線失敗就自動重試。
+  // 2026-09-13 v2：後端正常一趟約 0.5～1 s，所以每一次請求最多等一個逾時就砍掉重來。
   // 2026-09-16 v5：實測後端每趟 1～2 s，但 googleusercontent 那一跳偶爾吊 6～9 秒才回，6 秒會把好的回應也砍掉 → 放寬到 10 秒。
-  var ATTEMPT_TIMEOUT_MS = 10000;
-  var MAX_ATTEMPTS = 4;
+  // 2026-09-16 v6：手機 LINE 仍常見「後端 1 秒跑完、前端 10 秒等不到回應」連續四次（執行紀錄每 10.5 秒一筆）。
+  //   fetch 走 302 → googleusercontent 那一跳在 LINE 內建瀏覽器不可靠，所以加第二條路：JSONP（<script src>），
+  //   瀏覽器原生跟轉址、不走 CORS、不受 fetch 的限制；後端 V14 支援 callback 參數。
+  //   策略：先 fetch；5 秒還沒回就同時再開一條 JSONP（誰先回誰算）；再失敗就交錯重試，總預算約 50 秒。
+  //   失敗畫面附一行診斷（每次嘗試的方式／耗時／錯誤），截圖給店長就能判斷卡在哪。
+  var DIAG = [];
+  function viaFetch(params, timeoutMs) {
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, timeoutMs) : null;
+    var opts = { cache: 'no-store' };
+    if (ctrl) opts.signal = ctrl.signal;
+    return fetch(apiUrl(params), opts)
+      .then(function(r) { return r.text(); })
+      .then(function(txt) {
+        if (timer) clearTimeout(timer);
+        var t = txt.trim();
+        if (t.charAt(0) !== '{') throw new Error('non-json');
+        return JSON.parse(t);
+      })
+      .catch(function(err) { if (timer) clearTimeout(timer); throw err; });
+  }
+  function viaJsonp(params, timeoutMs) {
+    return new Promise(function(resolve, reject) {
+      var cb = '__lq' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+      var s = document.createElement('script');
+      var timer = setTimeout(function() { cleanup(); reject(new Error('jsonp-timeout')); }, timeoutMs);
+      function cleanup() { clearTimeout(timer); try { delete window[cb]; } catch (e) { window[cb] = undefined; } if (s.parentNode) s.parentNode.removeChild(s); }
+      window[cb] = function(data) { cleanup(); resolve(data); };
+      s.onerror = function() { cleanup(); reject(new Error('jsonp-error')); };
+      s.async = true;
+      s.src = apiUrl(params + '&callback=' + cb);
+      document.head.appendChild(s);
+    });
+  }
+  // 2026-09-16 v6 實測（13:07～13:09）：Apps Script 偶爾會進入一段「每個請求都要 9～13 秒才開始執行」的慢速期
+  //   （執行紀錄裡 doGet 本身仍只有 1 秒，但開始時間比前端送出晚 8～9 秒；fetch 與 JSONP 都一樣慢，
+  //   所以是 Google 前門排隊，不是我們的程式）。10 秒逾時剛好把這種「慢但會成功」的回應全砍掉，四次全滅。
+  //   → 逾時放寬到 25 秒（慢速期也等得到），JSONP 5 秒後並行當備援。
+  // [方式, 逾時, 幾毫秒後啟動]
+  var API_PLAN = [
+    ['fetch', 25000, 0],
+    ['jsonp', 25000, 5000],
+    ['fetch', 20000, 22000],
+    ['jsonp', 20000, 30000]
+  ];
   function apiGet(params) {
-    var attempt = 0;
-    function once() {
-      attempt++;
-      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-      var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, ATTEMPT_TIMEOUT_MS) : null;
-      var opts = { cache: 'no-store' };
-      if (ctrl) opts.signal = ctrl.signal;
-      return fetch(apiUrl(params), opts)
-        .then(function(r) { return r.text(); })
-        .then(function(txt) {
-          if (timer) clearTimeout(timer);
-          var t = txt.trim();
-          if (t.charAt(0) !== '{') throw new Error('non-json');
-          return JSON.parse(t);
-        })
-        .catch(function(err) {
-          if (timer) clearTimeout(timer);
-          if (attempt >= MAX_ATTEMPTS) throw err;
-          var lb = document.getElementById('loading');
-          if (lb) lb.textContent = '連線中，再試一次…（' + attempt + '）';
-          return new Promise(function(res) { setTimeout(res, 300 * attempt); }).then(once);
-        });
-    }
-    return once();
+    DIAG = [];
+    return new Promise(function(resolve, reject) {
+      var done = false, started = 0, pending = 0;
+      function finishIfDead() {
+        if (!done && started === API_PLAN.length && pending === 0) { done = true; reject(new Error('all-failed')); }
+      }
+      API_PLAN.forEach(function(p, idx) {
+        setTimeout(function() {
+          if (done) return;
+          started++; pending++;
+          var t0 = Date.now();
+          var run = p[0] === 'jsonp' ? viaJsonp : viaFetch;
+          if (idx > 0) { var lb = document.getElementById('loading'); if (lb) lb.textContent = (idx === 1 ? '系統回應較慢，請稍候（最多約 30 秒）…' : '連線中，再試一次…（' + idx + '）'); }
+          run(params, p[1]).then(function(data) {
+            DIAG.push(p[0] + ':ok ' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
+            if (done) return;
+            done = true; resolve(data);
+          }, function(err) {
+            pending--;
+            DIAG.push(p[0] + ':' + (err && err.name === 'AbortError' ? 'timeout' : (err && err.message ? err.message : String(err))) + ' ' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
+            finishIfDead();
+          });
+        }, p[2]);
+      });
+    });
+  }
+  function diagText() {
+    var ua = navigator.userAgent || '';
+    var short = (/Line\//.test(ua) ? 'LINE ' : '') + (/iPhone|iPad/.test(ua) ? 'iOS' : (/Android/.test(ua) ? 'Android' : 'PC'));
+    return '[' + short + '] ' + DIAG.join(' · ');
   }
   function fetchData() {
     apiGet('action=' + (ROLE === 'coach' ? 'coachdata' : 'data') + '&idToken=' + encodeURIComponent(idToken))
@@ -215,7 +269,7 @@
         if (data.needBind) { showBindView(); return; }
         if (ROLE === 'coach') renderCoach(data); else renderMain(data);
       })
-      .catch(function() { showError('讀取資料失敗，請關閉後重新開啟這個頁面'); });
+      .catch(function() { showError('讀取資料失敗，請關閉後重新開啟這個頁面', diagText()); });
   }
   document.getElementById('bindBtn').addEventListener('click', function() {
     var phone = document.getElementById('phoneInput').value.trim();
@@ -230,7 +284,7 @@
         if (data.error) { errEl.textContent = data.error; return; }
         if (ROLE === 'coach') renderCoach(data); else renderMain(data);
       })
-      .catch(function() { btn.disabled = false; errEl.textContent = '連線失敗，請稍後再試一次'; });
+      .catch(function() { btn.disabled = false; errEl.textContent = '連線失敗，請稍後再試一次（' + diagText() + '）'; });
   });
   liff.init({ liffId: liffId }).then(function() {
     if (!liff.isLoggedIn()) { liff.login(); return; }
