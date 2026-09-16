@@ -42,6 +42,8 @@
 </head>
 <body>
   <div id="loading" class="loading">載入中…</div>
+  <!-- v6.2：先顯示上次成功載入的資料，背景更新；更新失敗就保留舊資料並註明時間（點一下重試） -->
+  <div id="staleNote" class="sub" style="display:none;text-align:center;margin:8px 0 4px;cursor:pointer"></div>
   <div id="bindView" style="display:none">
     <div class="card">
       <h1>第一次使用，請先核對身份</h1>
@@ -151,6 +153,8 @@
   }
   function showBindView() {
     document.getElementById('loading').style.display = 'none';
+    document.getElementById('mainView').style.display = 'none';
+    document.getElementById('coachView').style.display = 'none';
     document.getElementById('bindView').style.display = 'block';
     if (ROLE === 'coach') {
       document.querySelector('#bindView h1').textContent = '教練綁定：請先核對身份';
@@ -262,16 +266,52 @@
     var short = (/Line\//.test(ua) ? 'LINE ' : '') + (/iPhone|iPad/.test(ua) ? 'iOS' : (/Android/.test(ua) ? 'Android' : 'PC'));
     return '[' + short + '] ' + DIAG.join(' · ');
   }
+  // 2026-09-16 v6.2：stale-while-revalidate。上次成功載入的資料存在這支瀏覽器的 localStorage（以 LINE 使用者 ID 分開），
+  // 下次一開先立刻畫出來、背景再去抓新的；抓到就換新、抓不到就保留舊資料並註明「顯示的是 HH:MM 的資料」，點一下可重試。
+  // 這樣 Google 慢速期也不會看到「讀取資料失敗」的空畫面。綁定畫面／錯誤不會被快取。
+  function cacheKey() {
+    var sub = '';
+    try { var d = liff.getDecodedIDToken(); sub = (d && d.sub) || ''; } catch (e) {}
+    return sub ? 'lq_cache_' + ROLE + '_' + sub : '';
+  }
+  function cacheRead() { try { var k = cacheKey(); if (!k) return null; var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function cacheWrite(data) { try { var k = cacheKey(); if (!k) return; localStorage.setItem(k, JSON.stringify({ ts: Date.now(), data: data })); } catch (e) {} }
+  function fmtHM(ts) { var d = new Date(ts); var p = function(n) { return n < 10 ? '0' + n : n; }; return p(d.getHours()) + ':' + p(d.getMinutes()); }
+  var staleRetry = false;
+  function setStale(msg, retry) {
+    var el = document.getElementById('staleNote');
+    staleRetry = !!retry;
+    if (!msg) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = msg;
+  }
+  document.getElementById('staleNote').addEventListener('click', function() { if (staleRetry) fetchData(); });
   function fetchData() {
+    var cached = cacheRead(), showedCache = false;
+    if (cached && cached.data && !cached.data.error && !cached.data.needBind) {
+      try {
+        if (ROLE === 'coach') renderCoach(cached.data); else renderMain(cached.data);
+        showedCache = true;
+        setStale('上次更新 ' + fmtHM(cached.ts) + '　更新中…', false);
+      } catch (e) { showedCache = false; }
+    }
     apiGet('action=' + (ROLE === 'coach' ? 'coachdata' : 'data') + '&idToken=' + encodeURIComponent(idToken))
       .then(function(data) {
         if (data.error && /登入驗證失敗/.test(data.error)) { relogin(); return; }
-        if (data.error) { showError(data.error); return; }
+        if (data.error) {
+          if (showedCache) { setStale('更新失敗（' + data.error + '）　顯示的是 ' + fmtHM(cached.ts) + ' 的資料，點這裡重試', true); return; }
+          showError(data.error); return;
+        }
         clearReloginFlag();
-        if (data.needBind) { showBindView(); return; }
+        if (data.needBind) { setStale(''); showBindView(); return; }
+        cacheWrite(data);
         if (ROLE === 'coach') renderCoach(data); else renderMain(data);
+        setStale('');
       })
-      .catch(function() { showError('讀取資料失敗，請關閉後重新開啟這個頁面', diagText()); });
+      .catch(function() {
+        if (showedCache) { setStale('更新失敗　顯示的是 ' + fmtHM(cached.ts) + ' 的資料，點這裡重試（' + diagText() + '）', true); return; }
+        showError('讀取資料失敗，請關閉後重新開啟這個頁面', diagText());
+      });
   }
   document.getElementById('bindBtn').addEventListener('click', function() {
     var phone = document.getElementById('phoneInput').value.trim();
@@ -284,6 +324,7 @@
       .then(function(data) {
         btn.disabled = false;
         if (data.error) { errEl.textContent = data.error; return; }
+        cacheWrite(data);
         if (ROLE === 'coach') renderCoach(data); else renderMain(data);
       })
       .catch(function() { btn.disabled = false; errEl.textContent = '連線失敗，請稍後再試一次（' + diagText() + '）'; });
