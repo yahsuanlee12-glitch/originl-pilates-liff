@@ -31,6 +31,13 @@
     button:disabled { opacity: 0.5; }
     .error { color: #c0392b; font-size: 13px; margin-top: 8px; }
     .loading { text-align: center; color: #999; padding: 40px 0; }
+    /* 教練版（2026-09-16）*/
+    .day { font-weight: 700; font-size: 14px; color: #8a6d4b; margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #eee; }
+    .cls { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .cls:last-child { border-bottom: none; }
+    .cls .t { font-weight: 600; font-size: 14px; }
+    .cls .m { font-size: 13px; color: #555; margin-top: 2px; }
+    .cls .m.none { color: #aaa; }
   </style>
 </head>
 <body>
@@ -64,15 +71,27 @@
       <div id="bookingList"></div>
     </div>
   </div>
+  <!-- 教練版「我的課表」（2026-09-16）：網址帶 ?role=coach 進來就走這裡；綁定比對 coaches.phone -->
+  <div id="coachView" style="display:none">
+    <h1 id="coachGreeting"></h1>
+    <div class="sub">Original Pilates 教練課表（未來 7 天）</div>
+    <div class="card" id="coachList"></div>
+    <div class="sub" style="text-align:center">每天 20:00 會 LINE 推明日課表給你；有人預約或取消也會即時通知。</div>
+  </div>
   <div id="fatalError" class="error" style="display:none;text-align:center;padding:40px 16px;"></div>
 <script>
   var liffId = '2011215410-l06m0VwG';
-  var API_BASE = 'https://script.google.com/macros/s/AKfycbz6EgDUSj8Ud7NaROGma1uVLlSdJgH1wG784JOym0grMDgfviRTuTp267sSuIPEKuix/exec';
+  // 2026-09-16：後端搬到 Workspace（optaiwan.com）後，網址要用 /a/macros/optaiwan.com/ 這種寫法。
+  // 舊的 /macros/s/… 在「手機瀏覽器已登入一般 Gmail 帳號」時會回 404（LINE 內建瀏覽器就是這種情況）；
+  // /a/macros/optaiwan.com/ 不論匿名、登入 Gmail、登入公司帳號都正常。
+  var API_BASE = 'https://script.google.com/a/macros/optaiwan.com/s/AKfycbz6EgDUSj8Ud7NaROGma1uVLlSdJgH1wG784JOym0grMDgfviRTuTp267sSuIPEKuix/exec';
   var idToken = null;
+  var ROLE = (/[?&]role=coach\b/.test(location.search)) ? 'coach' : 'member';   // 2026-09-16 教練版
   function showError(msg) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'none';
     document.getElementById('mainView').style.display = 'none';
+    document.getElementById('coachView').style.display = 'none';
     var el = document.getElementById('fatalError');
     el.style.display = 'block';
     el.textContent = msg;
@@ -112,6 +131,33 @@
   function showBindView() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'block';
+    if (ROLE === 'coach') {
+      document.querySelector('#bindView h1').textContent = '教練綁定：請先核對身份';
+      document.querySelector('#bindView .sub').textContent = '請輸入你留給店裡的手機號碼（教練資料上的電話）';
+    }
+  }
+  function renderCoach(data) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('bindView').style.display = 'none';
+    document.getElementById('coachView').style.display = 'block';
+    document.getElementById('coachGreeting').textContent = (data.name || '') + ' 教練你好';
+    var box = document.getElementById('coachList');
+    box.innerHTML = '';
+    var list = data.classes || [];
+    if (!list.length) { box.innerHTML = '<div class="empty">未來 7 天沒有排課</div>'; return; }
+    var curDay = '';
+    list.forEach(function(c) {
+      var d = new Date(c.startTime);
+      var dayKey = (d.getMonth()+1) + '/' + d.getDate() + '（週' + ['日','一','二','三','四','五','六'][d.getDay()] + '）';
+      if (dayKey !== curDay) { curDay = dayKey; var h = document.createElement('div'); h.className = 'day'; h.textContent = dayKey; box.appendChild(h); }
+      var pad = function(n) { return n < 10 ? '0' + n : n; };
+      var item = document.createElement('div');
+      item.className = 'cls';
+      var who = (c.members && c.members.length) ? c.members.map(function(m) { return m.name ? (m.id + ' ' + m.name) : m.id; }).join('、') : '';
+      item.innerHTML = '<div class="t">' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + '　' + c.classType + (c.capacity > 1 ? '（' + (c.members ? c.members.length : 0) + '/' + c.capacity + '）' : '') + '</div>' +
+        '<div class="m' + (who ? '' : ' none') + '">' + (who || '尚無預約') + '</div>';
+      box.appendChild(item);
+    });
   }
   function apiUrl(params) { return API_BASE + '?' + params + '&_=' + Date.now(); }
   // 2026-09-13：Apps Script 的回應要經過 script.googleusercontent.com 這一跳，那一跳偶爾會回 404 的 HTML
@@ -147,11 +193,11 @@
     return once();
   }
   function fetchData() {
-    apiGet('action=data&idToken=' + encodeURIComponent(idToken))
+    apiGet('action=' + (ROLE === 'coach' ? 'coachdata' : 'data') + '&idToken=' + encodeURIComponent(idToken))
       .then(function(data) {
         if (data.error) { showError(data.error); return; }
         if (data.needBind) { showBindView(); return; }
-        renderMain(data);
+        if (ROLE === 'coach') renderCoach(data); else renderMain(data);
       })
       .catch(function() { showError('讀取資料失敗，請關閉後重新開啟這個頁面'); });
   }
@@ -162,11 +208,11 @@
     errEl.textContent = '';
     if (!phone) { errEl.textContent = '請輸入手機號碼'; return; }
     btn.disabled = true;
-    apiGet('action=bind&idToken=' + encodeURIComponent(idToken) + '&phone=' + encodeURIComponent(phone))
+    apiGet('action=' + (ROLE === 'coach' ? 'coachbind' : 'bind') + '&idToken=' + encodeURIComponent(idToken) + '&phone=' + encodeURIComponent(phone))
       .then(function(data) {
         btn.disabled = false;
         if (data.error) { errEl.textContent = data.error; return; }
-        renderMain(data);
+        if (ROLE === 'coach') renderCoach(data); else renderMain(data);
       })
       .catch(function() { btn.disabled = false; errEl.textContent = '連線失敗，請稍後再試一次'; });
   });
