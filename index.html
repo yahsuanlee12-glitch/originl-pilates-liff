@@ -41,6 +41,28 @@
     .cls.past { opacity: .55; }
     .cls .tag { display: inline-block; font-size: 11px; color: #8a6d4b; border: 1px solid #d9c9b5; border-radius: 10px; padding: 0 6px; margin-left: 6px; vertical-align: 1px; }
     /* 2026-09-16 v7.1：教練頁底部的日曆顏色對照＋排課規則（與日曆說明欄同一份，中英） */
+    /* 我的假期（2026-09-18 五期，唯讀） */
+    .lv { background: #fff; border-radius: 12px; padding: 14px 16px; margin: 6px 0 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .lv h3 { margin: 0 0 2px; font-size: 14px; color: #333; }
+    .lv .yr { font-size: 12px; color: #999; margin-bottom: 10px; }
+    .lv table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .lv th { text-align: right; font-weight: 500; color: #999; font-size: 12px; padding: 0 0 4px; }
+    .lv th:first-child { text-align: left; }
+    .lv td { padding: 5px 0; border-top: 1px solid #f2f2f2; text-align: right; color: #444; }
+    .lv td:first-child { text-align: left; font-weight: 600; color: #333; }
+    .lv td .pay { font-weight: 400; color: #999; font-size: 12px; margin-left: 4px; }
+    .lv .rem { font-weight: 700; color: #5f7a52; }
+    .lv .rem.zero { color: #b5654e; }
+    .lv .note { font-size: 12px; color: #8a6d4b; margin-top: 8px; line-height: 1.5; }
+    .lv .proof { background: #fdf3ee; border: 1px solid #e8cdbd; border-radius: 8px; padding: 9px 11px; margin-top: 10px; font-size: 13px; color: #8a4a2f; line-height: 1.5; }
+    .lv .rows { margin-top: 12px; }
+    .lv .rows .r { padding: 7px 0; border-top: 1px solid #f2f2f2; font-size: 13px; }
+    .lv .rows .r .a { color: #333; }
+    .lv .rows .r .b { color: #999; font-size: 12px; margin-top: 2px; }
+    .lv .st { display: inline-block; font-size: 11px; border-radius: 10px; padding: 0 6px; margin-left: 6px; vertical-align: 1px; border: 1px solid; }
+    .lv .st.ok { color: #5f7a52; border-color: #c3d4b8; }
+    .lv .st.wait { color: #b8860b; border-color: #e6d19a; }
+    .lv .st.no { color: #999; border-color: #ddd; }
     .legend { background: #fff; border-radius: 12px; padding: 14px 16px; margin: 6px 0 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); font-size: 13px; color: #555; }
     .legend h3 { margin: 0 0 8px; font-size: 14px; color: #333; }
     .legend .row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
@@ -93,6 +115,8 @@
     <div class="tabs" id="coachTabs"></div>
     <div class="month-sum" id="coachSum"></div>
     <div class="card" id="coachList"></div>
+    <!-- 我的假期（2026-09-18 五期）：唯讀。讀不到就整塊不顯示。 -->
+    <div class="lv" id="coachLeave" style="display:none"></div>
     <!-- v7.1：顏色對照＋排課規則（2026-09-16 John 定案；與日曆說明欄 CALENDAR_COLOR_LEGEND_ 同一份） -->
     <div class="legend">
       <h3>日曆顏色對照｜Colour key</h3>
@@ -208,6 +232,61 @@
       tabs.appendChild(b);
     });
     renderCoachMonth(months);
+    renderCoachLeave(data.leave);
+  }
+  // 我的假期（2026-09-18 五期，唯讀）。要請假一律跟店長說，這裡只給看。
+  function renderCoachLeave(lv) {
+    var box = document.getElementById('coachLeave');
+    if (!box) return;
+    if (!lv || !lv.items || !lv.items.length) { box.style.display = 'none'; return; }
+    var esc = function(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var payLabel = function(r) {
+      var n = Number(r);
+      if (n >= 0.999) return '全薪';
+      if (Math.abs(n - 0.5) < 0.001) return '半薪';
+      if (n <= 0.001) return '無薪';
+      return Math.round(n * 100) + '%';
+    };
+    var h = '<h3>我的假期</h3><div class="yr">年度 ' + esc(lv.yearLabel) + '　資料到 ' + esc(lv.asOf) + '</div>';
+    h += '<table><thead><tr><th>假別</th><th>額度</th><th>已用</th><th>剩餘</th></tr></thead><tbody>';
+    var notes = [];
+    lv.items.forEach(function(x) {
+      var quota = x.unlimited ? '不限' : (x.quota == null ? '—' : x.quota + ' 天');
+      var rem = x.unlimited ? '—' : (x.remaining == null ? '—' : x.remaining + ' 天');
+      var zero = (!x.unlimited && Number(x.remaining) <= 0) ? ' zero' : '';
+      h += '<tr><td>' + esc(x.type) + '<span class="pay">' + payLabel(x.payRatio) + (x.needProof ? '・需證明' : '') + '</span></td>' +
+           '<td>' + quota + '</td><td>' + x.used + ' 天</td>' +
+           '<td class="rem' + zero + '">' + rem + '</td></tr>';
+      if (x.monthly) notes.push(x.type + '每月上限 ' + x.monthly.cap + ' 天（' + x.monthly.month + ' 已用 ' + x.monthly.used + ' 天）。');
+      if (x.note) notes.push(x.note);
+    });
+    h += '</tbody></table>';
+    if (notes.length) h += '<div class="note">' + notes.map(esc).join('<br>') + '</div>';
+    if (lv.needProof) {
+      h += '<div class="proof">你有 ' + lv.needProof + ' 張病假還沒交證明。<b>直接用 LINE 把診斷證明或收據拍給店長</b>，店長收到後會在系統上打勾，這裡就會變成「已收到」。</div>';
+    }
+    if (lv.leaves && lv.leaves.length) {
+      h += '<div class="rows"><h3 style="margin:14px 0 2px">我的請假紀錄</h3><div class="yr">最近半年與未來</div>';
+      lv.leaves.forEach(function(r) {
+        var period = r.startDate + (r.endDate && r.endDate !== r.startDate ? '～' + r.endDate : '') +
+                     (r.dayPart && r.dayPart !== '整天' ? '（' + r.dayPart + '）' : '');
+        var cls = r.status === '已核准' ? 'ok' : (r.status === '待核准' ? 'wait' : 'no');
+        var b = [];
+        if (r.reason) b.push(r.reason);
+        if (r.deduct) b.push('扣薪 ' + r.deduct + ' 元');
+        if (r.proofStatus === '待上傳') b.push('證明待交');
+        else if (r.proofStatus === '已收到') b.push('證明已收到');
+        if (r.decideNote) b.push(r.decideNote);
+        h += '<div class="r"><div class="a">' + esc(period) + '　' + esc(r.leaveType) + ' ' + r.days +
+             ' 天<span class="st ' + cls + '">' + esc(r.status) + '</span></div>' +
+             (b.length ? '<div class="b">' + esc(b.join('　｜　')) + '</div>' : '') + '</div>';
+      });
+      h += '</div>';
+    }
+    h += '<div class="note" style="color:#999">要請假直接跟店長說，店長會幫你登記，這頁隔天就會更新。</div>';
+    box.innerHTML = h;
+    box.style.display = 'block';
   }
   function renderCoachMonth(months) {
     var mo = months[coachTab], now = new Date();
