@@ -11,10 +11,10 @@
   <title>Original Pilates 我的課表</title>
   <!-- 2026-09-19：LINE 的連結預覽卡片原本抓不到描述，就隨便撈頁面裡的一段內文。
        補上 description 與 og 標籤，讓官方帳號訊息裡的卡片顯示正確的文字。 -->
-  <meta name="description" content="Original Pilates 課表查詢：會員看剩餘堂數與預約紀錄，教練看自己的排課與假期。">
+  <meta name="description" content="Original Pilates 課表查詢：會員看剩餘堂數與預約紀錄，老師看自己的排課與假期。">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Original Pilates 我的課表">
-  <meta property="og:description" content="會員看剩餘堂數與預約紀錄，教練看自己的排課與假期。">
+  <meta property="og:description" content="會員看剩餘堂數與預約紀錄，老師看自己的排課與假期。">
   <meta property="og:url" content="https://line.optaiwan.com/">
   <meta name="twitter:card" content="summary">
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -44,7 +44,7 @@
     button:disabled { opacity: 0.5; }
     .error { color: #c0392b; font-size: 13px; margin-top: 8px; }
     .loading { text-align: center; color: #999; padding: 40px 0; }
-    /* 教練版（2026-09-16）*/
+    /* 老師版（2026-09-16）*/
     .day { font-weight: 700; font-size: 14px; color: #8a6d4b; margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 2px solid #eee; }
     .cls { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
     .cls:last-child { border-bottom: none; }
@@ -53,7 +53,7 @@
     .cls .m.none { color: #aaa; }
     .cls.past { opacity: .55; }
     .cls .tag { display: inline-block; font-size: 11px; color: #8a6d4b; border: 1px solid #d9c9b5; border-radius: 10px; padding: 0 6px; margin-left: 6px; vertical-align: 1px; }
-    /* 2026-09-16 v7.1：教練頁底部的日曆顏色對照＋排課規則（與日曆說明欄同一份，中英） */
+    /* 2026-09-16 v7.1：老師頁底部的日曆顏色對照＋排課規則（與日曆說明欄同一份，中英） */
     /* 我的假期（2026-09-18 五期，唯讀） */
     .lv { background: #fff; border-radius: 12px; padding: 14px 16px; margin: 6px 0 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .lv h3 { margin: 0 0 2px; font-size: 14px; color: #333; }
@@ -121,10 +121,10 @@
       <div id="bookingList"></div>
     </div>
   </div>
-  <!-- 教練版「我的課表」（2026-09-16）：網址帶 ?role=coach 進來就走這裡；綁定比對 coaches.phone -->
+  <!-- 老師版「我的課表」（2026-09-16）：網址帶 ?role=coach 進來就走這裡；綁定比對 coaches.phone -->
   <div id="coachView" style="display:none">
     <h1 id="coachGreeting"></h1>
-    <div class="sub">Original Pilates 教練課表</div>
+    <div class="sub">Original Pilates 老師課表</div>
     <div class="tabs" id="coachTabs"></div>
     <div class="month-sum" id="coachSum"></div>
     <div class="card" id="coachList"></div>
@@ -150,7 +150,7 @@
   // /a/macros/optaiwan.com/ 不論匿名、登入 Gmail、登入公司帳號都正常。
   var API_BASE = 'https://script.google.com/a/macros/optaiwan.com/s/AKfycbz6EgDUSj8Ud7NaROGma1uVLlSdJgH1wG784JOym0grMDgfviRTuTp267sSuIPEKuix/exec';
   var idToken = null;
-  // 2026-09-16 教練版：網址帶 ?role=coach 就走教練版。
+  // 2026-09-16 老師版：網址帶 ?role=coach 就走老師版。
   // 2026-09-16 v5：LINE 登入轉址後（外部瀏覽器）原本的 query 會被包進 liffRedirectUri，
   // 在 LINE 內第一次開啟則是包在 liff.state，所以這三個地方都要看。
   var ROLE = 'member';
@@ -209,7 +209,7 @@
       var item = document.createElement('div');
       item.className = 'booking-item';
       item.innerHTML = '<div class="type">' + b.classType + '</div>' +
-        '<div class="time">' + fmtDateTime(b.startTime) + (b.coachName ? '　教練：' + b.coachName : '') + '</div>';
+        '<div class="time">' + fmtDateTime(b.startTime) + (b.coachName ? '　老師：' + b.coachName : '') + '</div>';
       list.appendChild(item);
     });
   }
@@ -219,8 +219,8 @@
     document.getElementById('coachView').style.display = 'none';
     document.getElementById('bindView').style.display = 'block';
     if (ROLE === 'coach') {
-      document.querySelector('#bindView h1').textContent = '教練綁定：請先核對身份';
-      document.querySelector('#bindView .sub').textContent = '請輸入你留給店裡的手機號碼（教練資料上的電話）';
+      document.querySelector('#bindView h1').textContent = '老師綁定：請先核對身份';
+      document.querySelector('#bindView .sub').textContent = '請輸入你留給店裡的手機號碼（老師資料上的電話）';
     }
   }
   // 2026-09-16 v7：改成「本月＋下月」兩個分頁（John 定案），預設停在本月；已上過的課淡化並標「已上」。
@@ -229,7 +229,7 @@
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'none';
     document.getElementById('coachView').style.display = 'block';
-    document.getElementById('coachGreeting').textContent = (data.name || '') + ' 教練你好';
+    document.getElementById('coachGreeting').textContent = (data.name || '') + ' 老師你好';
     coachData = data;
     var now = new Date();
     var base = data.range && data.range.from ? new Date(data.range.from) : new Date(now.getFullYear(), now.getMonth(), 1);
