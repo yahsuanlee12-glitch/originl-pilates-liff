@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- 2026-09-19：LINE 內建瀏覽器會把 index.html 抓著不放（John 看到的還是好幾天前的版本）。
+       GitHub Pages 不給設 HTTP 標頭，只能用 meta 擋，讓 WebView 每次都回來拿新的。 -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Original Pilates 我的課表</title>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
@@ -111,7 +116,7 @@
   <!-- 教練版「我的課表」（2026-09-16）：網址帶 ?role=coach 進來就走這裡；綁定比對 coaches.phone -->
   <div id="coachView" style="display:none">
     <h1 id="coachGreeting"></h1>
-    <div class="sub">Original Pilates 教練課表（本月＋下月）</div>
+    <div class="sub">Original Pilates 教練課表</div>
     <div class="tabs" id="coachTabs"></div>
     <div class="month-sum" id="coachSum"></div>
     <div class="card" id="coachList"></div>
