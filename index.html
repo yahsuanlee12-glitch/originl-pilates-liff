@@ -381,7 +381,7 @@
     ['jsonp', 20000, 30000]
   ];
   function apiGet(params) {
-    DIAG = [];
+    DIAG = DIAG.filter(function(x) { return /^cf:/.test(x); });
     return new Promise(function(resolve, reject) {
       var done = false, started = 0, pending = 0;
       function finishIfDead() {
@@ -432,6 +432,24 @@
     el.textContent = msg;
   }
   document.getElementById('staleNote').addEventListener('click', function() { if (staleRetry) fetchData(); });
+  // 2026-09-22 v7：Cloudflare 快取層。Google Apps Script 本身 1 秒跑完，但 Google 前門間歇要 5～25 秒才把結果送到手機；
+  // 所以先向 Cloudflare Worker 拿「LIFF 後端每分鐘推上去的快照」（~0.1 秒），畫出來之後再照舊在背景問一次 Google 補最新。
+  // Cloudflare 沒資料（還沒綁定／剛綁定）、同步停了（心跳超過 10 分鐘）、或連不上 → 直接走原本的 Google 路徑，行為跟 v6 一樣。
+  var CF_BASE = 'https://original-pilates-lq.originalpilates.workers.dev';   // 改成空字串＝不用 Cloudflare（完全等於 v6）
+  var CF_TIMEOUT_MS = 4000;
+  var CF_HB_MAX_MS = 10 * 60 * 1000;
+  function cfGet() {
+    if (!CF_BASE) return Promise.reject(new Error('cf-off'));
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, CF_TIMEOUT_MS) : null;
+    var t0 = Date.now();
+    var opts = { cache: 'no-store', headers: { Authorization: 'Bearer ' + idToken } };
+    if (ctrl) opts.signal = ctrl.signal;
+    return fetch(CF_BASE + '/v1/me?role=' + ROLE, opts)
+      .then(function(r) { return r.json(); })
+      .then(function(j) { if (timer) clearTimeout(timer); DIAG.push('cf:' + (j && j.ok ? 'ok' : (j && j.miss ? 'miss' : 'no')) + ' ' + ((Date.now() - t0) / 1000).toFixed(1) + 's'); return j; })
+      .catch(function(e) { if (timer) clearTimeout(timer); DIAG.push('cf:err ' + ((Date.now() - t0) / 1000).toFixed(1) + 's'); throw e; });
+  }
   function fetchData() {
     var cached = cacheRead(), showedCache = false;
     if (cached && cached.data && !cached.data.error && !cached.data.needBind) {
@@ -441,10 +459,25 @@
         setStale('上次更新 ' + fmtHM(cached.ts) + '　更新中…', false);
       } catch (e) { showedCache = false; }
     }
+    cfGet().then(function(j) {
+      var fresh = j && j.ok && j.data && !j.data.error && !j.data.needBind && (Date.now() - Number(j.hb || 0)) < CF_HB_MAX_MS;
+      if (!fresh) { googleFetch(showedCache, cached, false); return; }
+      try {
+        if (ROLE === 'coach') renderCoach(j.data); else renderMain(j.data);
+      } catch (e) { googleFetch(showedCache, cached, false); return; }
+      cacheWrite(j.data);
+      clearReloginFlag();
+      setStale('');
+      googleFetch(true, { ts: Date.now(), data: j.data }, true);   // 背景再問 Google 補最新；失敗也不打擾
+    }, function() { googleFetch(showedCache, cached, false); });
+  }
+  // silent：畫面已經有 Cloudflare 的新資料了，背景更新失敗就安靜略過（不顯示「更新失敗」）
+  function googleFetch(showedCache, cached, silent) {
     apiGet('action=' + (ROLE === 'coach' ? 'coachdata' : 'data') + '&idToken=' + encodeURIComponent(idToken))
       .then(function(data) {
-        if (data.error && /登入驗證失敗/.test(data.error)) { relogin(); return; }
+        if (data.error && /登入驗證失敗/.test(data.error)) { if (!silent) relogin(); return; }
         if (data.error) {
+          if (silent) return;
           if (showedCache) { setStale('更新失敗（' + data.error + '）　顯示的是 ' + fmtHM(cached.ts) + ' 的資料，點這裡重試', true); return; }
           showError(data.error); return;
         }
@@ -455,6 +488,7 @@
         setStale('');
       })
       .catch(function() {
+        if (silent) return;
         if (showedCache) { setStale('更新失敗　顯示的是 ' + fmtHM(cached.ts) + ' 的資料，點這裡重試（' + diagText() + '）', true); return; }
         showError('讀取資料失敗，請關閉後重新開啟這個頁面', diagText());
       });
