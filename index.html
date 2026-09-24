@@ -107,9 +107,11 @@
     <div class="card">
       <div class="pool-grid">
         <div class="pool"><div class="num" id="poolA">0</div><div class="label">皮拉提斯課</div></div>
-        <div class="pool"><div class="num" id="poolC">0</div><div class="label">體驗課</div></div>
         <!-- 禪柔（2026-09-13 John 新增課種） -->
         <div class="pool"><div class="num" id="poolZ">0</div><div class="label">禪柔</div></div>
+        <!-- 2026-09-24 體驗課分兩種顯示（John：「我覺得需要分開顯示」）；後端 pools 多兩個鍵 -->
+        <div class="pool"><div class="num" id="poolC">0</div><div class="label">皮拉提斯體驗課</div></div>
+        <div class="pool"><div class="num" id="poolCZ">0</div><div class="label">禪柔體驗課</div></div>
         <!-- 團體課：一律顯示（2026-09-13 John 定案；原本 0 堂不顯示）。
              2026-09-14 合併：1對3＋1對4 → 「團體課」；團課1對2 不變。 -->
         <div class="pool" id="poolG2"><div class="num">0</div><div class="label">團課 1對2</div></div>
@@ -193,7 +195,10 @@
     document.getElementById('mainView').style.display = 'block';
     document.getElementById('greeting').textContent = (data.name || '') + ' 你好';
     document.getElementById('poolA').textContent = data.pools['皮拉提斯課／按摩課'] || 0;
-    document.getElementById('poolC').textContent = data.pools['體驗課'] || 0;
+    // 2026-09-24 體驗課分兩種；後端還沒更新（沒有拆開的鍵）時，總數先放皮拉提斯體驗課
+    var tp = data.pools || {}, splitOk = tp.hasOwnProperty('禪柔體驗課');
+    document.getElementById('poolC').textContent = Number(splitOk ? tp['皮拉提斯體驗課'] : tp['體驗課']) || 0;
+    document.getElementById('poolCZ').textContent = Number(splitOk ? tp['禪柔體驗課'] : 0) || 0;
     document.getElementById('poolZ').textContent = Number((data.pools || {})['禪柔']) || 0;   // 禪柔 2026-09-13
     // 團體課兩個池：一律顯示（2026-09-13 定案；2026-09-14 由三池合併成兩池）
     [['poolG2','團課1對2'],['poolG','團體課']].forEach(function(p) {
