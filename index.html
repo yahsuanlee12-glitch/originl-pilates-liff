@@ -86,6 +86,21 @@
     .tabs button { flex: 1; padding: 8px 0; border-radius: 10px; border: 1px solid #d9c9b5; background: #fff; color: #8a6d4b; font-size: 14px; }
     .tabs button.on { background: #8a6d4b; color: #fff; }
     .month-sum { font-size: 12px; color: #999; text-align: center; margin-bottom: 4px; }
+    /* 團體課課表＋候補（2026-10-03） */
+    .gc { padding: 10px 0; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+    .gc:last-child { border-bottom: none; }
+    .gc .info { flex: 1; min-width: 0; }
+    .gc .t { font-weight: 600; font-size: 14px; }
+    .gc .m { font-size: 12px; color: #777; margin-top: 2px; }
+    .gc .act { flex: 0 0 auto; text-align: right; font-size: 12px; }
+    .gc .act button { width: auto; padding: 7px 14px; font-size: 13px; border-radius: 16px; }
+    .gc .act button.ghost { background: #fff; color: #8a6d4b; border: 1px solid #d9c9b5; }
+    .gc .ok { color: #5f7a52; font-weight: 600; }
+    .gc .wait { color: #b8860b; font-weight: 600; }
+    .gc .open { color: #8a6d4b; }
+    .linkbtn { background: #fff; color: #8a6d4b; border: 1px solid #d9c9b5; }
+    .gmsg { font-size: 13px; margin-top: 8px; line-height: 1.5; }
+    .gmsg.err { color: #c0392b; } .gmsg.ok { color: #5f7a52; }
   </style>
 </head>
 <body>
@@ -114,7 +129,7 @@
         <div class="pool"><div class="num" id="poolCZ">0</div><div class="label">禪柔體驗課</div></div>
         <!-- 團體課：一律顯示（2026-09-13 John 定案；原本 0 堂不顯示）。
              2026-09-14 合併：1對3＋1對4 → 「團體課」；團課1對2 不變。 -->
-        <div class="pool" id="poolG2"><div class="num">0</div><div class="label">團課 1對2</div></div>
+        <div class="pool" id="poolG2"><div class="num">0</div><div class="label">皮拉提斯課 1對2</div></div>
         <div class="pool" id="poolG"><div class="num">0</div><div class="label">團體課</div></div>
         <!-- 墊上皮拉提斯（2026-10-03 John 新增課種）：一律顯示 -->
         <div class="pool" id="poolM"><div class="num">0</div><div class="label">墊上皮拉提斯</div></div>
@@ -123,6 +138,18 @@
     <div class="card">
       <h1 style="font-size:15px;margin-bottom:8px;">即將上課</h1>
       <div id="bookingList"></div>
+    </div>
+    <!-- 2026-10-03 候補：自己候補中的課（後端快照有 waitlist 才顯示） -->
+    <div class="card" id="waitCard" style="display:none">
+      <h1 style="font-size:15px;margin-bottom:8px;">候補中</h1>
+      <div id="waitList"></div>
+    </div>
+    <!-- 2026-10-03 團體課課表：未來兩週團體課＋墊上皮拉提斯；額滿可候補，有空位請聯絡官方（系統不自動加入） -->
+    <div class="card" id="groupCard">
+      <h1 style="font-size:15px;margin-bottom:4px;">團體課課表</h1>
+      <div class="sub" style="margin-bottom:10px">團體課（3～4 人）與墊上皮拉提斯（3～6 人），未來兩週。額滿的課可以按「候補」，有人取消時會用 LINE 通知你。</div>
+      <div id="groupList"><button class="linkbtn" id="groupLoadBtn" onclick="loadGroups()">查看團體課課表</button></div>
+      <div class="gmsg" id="groupMsg"></div>
     </div>
   </div>
   <!-- 老師版「我的課表」（2026-09-16）：網址帶 ?role=coach 進來就走這裡；綁定比對 coaches.phone -->
@@ -141,7 +168,7 @@
       <div class="row"><span class="sw" style="background:#f6bf26"></span>香蕉 Banana（黃）＝皮拉提斯體驗課 <span class="en">Pilates trial</span></div>
       <div class="row"><span class="sw" style="background:#e67c73"></span>紅鶴 Flamingo（粉紅）＝禪柔體驗課 <span class="en">Gyrokinesis trial</span></div>
       <div class="row"><span class="sw" style="background:#3f51b5"></span>藍莓 Blueberry（深藍）＝團體課 <span class="en">Group 3–4</span></div>
-      <div class="row"><span class="sw" style="background:#039be5"></span>孔雀 Peacock（藍綠）＝團課1對2 <span class="en">Duo</span></div>
+      <div class="row"><span class="sw" style="background:#039be5"></span>孔雀 Peacock（藍綠）＝皮拉提斯課1對2 <span class="en">Duo</span></div>
       <div class="row"><span class="sw" style="background:#8e24aa"></span>葡萄 Grape（紫）＝禪柔課 <span class="en">Gyrokinesis</span></div>
       <div class="row"><span class="sw" style="background:#f4511e"></span>橘子 Tangerine（橘）＝墊上皮拉提斯 <span class="en">Mat Pilates 3–6</span></div>
       <div class="rule">系統會依標題自動上色，選錯也會改回。<br>排課：在日曆活動標題打會員編號（例如 A0001，多人用空格隔開），就會自動建預約、扣堂、發 LINE。<br><span class="en">Colours are set automatically from the title. Put member IDs in the event title (e.g. A0001 A0002); bookings, deductions and LINE notices are automatic.</span></div>
@@ -208,6 +235,7 @@
     [['poolG2','團課1對2'],['poolG','團體課'],['poolM','墊上皮拉提斯']].forEach(function(p) {
       document.getElementById(p[0]).querySelector('.num').textContent = Number(data.pools[p[1]]) || 0;
     });
+    renderWait(data.waitlist || []);
     var list = document.getElementById('bookingList');
     list.innerHTML = '';
     if (!data.upcoming || data.upcoming.length === 0) {
@@ -221,6 +249,84 @@
         '<div class="time">' + fmtDateTime(b.startTime) + (b.coachName ? '　老師：' + b.coachName : '') + '</div>';
       list.appendChild(item);
     });
+  }
+  // ── 團體課課表＋候補（2026-10-03）──────────────────────────────────────────
+  // 課表即時查 Google（action=groups），不放 Cloudflare 快照；候補／取消候補寫入後回傳最新課表。
+  // 系統不會自動把人加進課：有空位時 LINE 通知所有候補的人（附順位），請他們聯絡官方，由櫃檯依順位登記。
+  function hEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function renderWait(list) {
+    var card = document.getElementById('waitCard'), box = document.getElementById('waitList');
+    if (!card) return;
+    if (!list || !list.length) { card.style.display = 'none'; box.innerHTML = ''; return; }
+    card.style.display = 'block';
+    box.innerHTML = list.map(function(w) {
+      return '<div class="gc"><div class="info"><div class="t">' + hEsc(w.classType) + '</div><div class="m">' + fmtDateTime(w.startTime) + (w.coachName ? '　老師：' + hEsc(w.coachName) : '') + '</div>' +
+        '<div class="m wait">候補第 ' + w.position + ' 位' + (w.total ? '（共 ' + w.total + ' 位）' : '') + '</div></div>' +
+        '<div class="act"><button class="ghost" onclick="wlLeave(\'' + hEsc(w.classId) + '\', this)">取消候補</button></div></div>';
+    }).join('') + '<div class="sub" style="margin:8px 0 0">有人取消時會用 LINE 通知你，請收到後聯絡官方 LINE，由櫃檯依候補順序幫你加入（系統不會自動加入）。</div>';
+  }
+  var GROUPS_BUSY = false;
+  function setGroupMsg(t, cls) { var el = document.getElementById('groupMsg'); el.textContent = t || ''; el.className = 'gmsg' + (cls ? ' ' + cls : ''); }
+  function loadGroups() {
+    if (GROUPS_BUSY) return;
+    GROUPS_BUSY = true; setGroupMsg('');
+    document.getElementById('groupList').innerHTML = '<div class="empty">載入中…</div>';
+    apiGet('action=groups&idToken=' + encodeURIComponent(idToken)).then(function(r) {
+      GROUPS_BUSY = false;
+      if (!r || r.error || r.needBind) { document.getElementById('groupList').innerHTML = '<button class="linkbtn" onclick="loadGroups()">重新載入</button>'; setGroupMsg((r && r.error) || '讀取失敗，請稍後再試', 'err'); return; }
+      renderGroups(r.classes || []);
+    }, function() {
+      GROUPS_BUSY = false;
+      document.getElementById('groupList').innerHTML = '<button class="linkbtn" onclick="loadGroups()">重新載入</button>';
+      setGroupMsg('連線逾時，請稍後再試', 'err');
+    });
+  }
+  function renderGroups(list) {
+    var box = document.getElementById('groupList');
+    if (!list.length) { box.innerHTML = '<div class="empty">未來兩週還沒有排團體課／墊上皮拉提斯</div>'; renderWaitFromGroups(list); return; }
+    var lastDay = '', html = '';
+    list.forEach(function(c) {
+      var d = new Date(c.startTime), day = (d.getMonth() + 1) + '/' + d.getDate() + '（週' + ['日','一','二','三','四','五','六'][d.getDay()] + '）';
+      if (day !== lastDay) { html += '<div class="day">' + day + '</div>'; lastDay = day; }
+      var pad = function(n) { return n < 10 ? '0' + n : n; };
+      var act;
+      if (c.mine === 'booked') act = '<span class="ok">✓ 已預約</span>';
+      else if (c.mine === 'waiting') act = '<div class="wait" style="margin-bottom:4px">候補第 ' + c.position + ' 位</div><button class="ghost" onclick="wlLeave(\'' + hEsc(c.classId) + '\', this)">取消候補</button>';
+      else if (c.spaces > 0) act = '<span class="open">尚有 ' + c.spaces + ' 位<br>請聯絡官方 LINE</span>';
+      else act = '<button onclick="wlJoin(\'' + hEsc(c.classId) + '\', this)">候補</button>' + (c.waiting ? '<div class="m" style="margin-top:3px">' + c.waiting + ' 人候補中</div>' : '');
+      html += '<div class="gc"><div class="info"><div class="t">' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + '　' + hEsc(c.classType) + '</div>' +
+        '<div class="m">' + (c.coachName ? '老師：' + hEsc(c.coachName) + '　' : '') + '已約 ' + c.booked + '/' + c.cap + (c.spaces > 0 ? '' : '（額滿）') + '</div></div><div class="act">' + act + '</div></div>';
+    });
+    box.innerHTML = html + '<div style="margin-top:10px"><button class="linkbtn" onclick="loadGroups()">重新整理</button></div>';
+    renderWaitFromGroups(list);
+  }
+  // 候補／取消後先用課表回應更新「候補中」卡片（快照約 1 分鐘後才會更新）
+  function renderWaitFromGroups(list) {
+    renderWait(list.filter(function(c) { return c.mine === 'waiting'; }).map(function(c) {
+      return { classId: c.classId, classType: c.classType, startTime: c.startTime, coachName: c.coachName, position: c.position, total: c.waiting };
+    }));
+  }
+  function wlCall(action, classId, btn, okMsg) {
+    if (GROUPS_BUSY) return;
+    GROUPS_BUSY = true; setGroupMsg('');
+    if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
+    apiGet('action=' + action + '&idToken=' + encodeURIComponent(idToken) + '&classId=' + encodeURIComponent(classId)).then(function(r) {
+      GROUPS_BUSY = false;
+      if (!r || r.error) { setGroupMsg((r && r.error) || '處理失敗，請稍後再試', 'err'); if (r && r.classes) renderGroups(r.classes); else loadGroups(); return; }
+      if (r.classes) renderGroups(r.classes);
+      setGroupMsg(okMsg(r), 'ok');
+      try { document.getElementById('groupCard').scrollIntoView({ block: 'start' }); } catch (e) {}
+    }, function() {
+      GROUPS_BUSY = false;
+      setGroupMsg('連線逾時，請重新整理確認是否成功', 'err');
+      if (btn) { btn.disabled = false; btn.textContent = action === 'wljoin' ? '候補' : '取消候補'; }
+    });
+  }
+  function wlJoin(classId, btn) {
+    wlCall('wljoin', classId, btn, function(r) { return '已加入候補，你是第 ' + r.position + ' 位。有人取消時會用 LINE 通知你，收到後請聯絡官方 LINE，由櫃檯幫你加入。'; });
+  }
+  function wlLeave(classId, btn) {
+    wlCall('wlleave', classId, btn, function() { return '已取消候補。'; });
   }
   function showBindView() {
     document.getElementById('loading').style.display = 'none';
