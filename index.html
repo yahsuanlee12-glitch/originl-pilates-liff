@@ -116,6 +116,8 @@
              2026-09-14 合併：1對3＋1對4 → 「團體課」；團課1對2 不變。 -->
         <div class="pool" id="poolG2"><div class="num">0</div><div class="label">團課 1對2</div></div>
         <div class="pool" id="poolG"><div class="num">0</div><div class="label">團體課</div></div>
+        <!-- 墊上皮拉提斯（2026-10-03 John 新增課種）：一律顯示 -->
+        <div class="pool" id="poolM"><div class="num">0</div><div class="label">墊上皮拉提斯</div></div>
       </div>
     </div>
     <div class="card">
@@ -141,6 +143,7 @@
       <div class="row"><span class="sw" style="background:#3f51b5"></span>藍莓 Blueberry（深藍）＝團體課 <span class="en">Group 3–4</span></div>
       <div class="row"><span class="sw" style="background:#039be5"></span>孔雀 Peacock（藍綠）＝團課1對2 <span class="en">Duo</span></div>
       <div class="row"><span class="sw" style="background:#8e24aa"></span>葡萄 Grape（紫）＝禪柔課 <span class="en">Gyrokinesis</span></div>
+      <div class="row"><span class="sw" style="background:#f4511e"></span>橘子 Tangerine（橘）＝墊上皮拉提斯 <span class="en">Mat Pilates 3–6</span></div>
       <div class="rule">系統會依標題自動上色，選錯也會改回。<br>排課：在日曆活動標題打會員編號（例如 A0001，多人用空格隔開），就會自動建預約、扣堂、發 LINE。<br><span class="en">Colours are set automatically from the title. Put member IDs in the event title (e.g. A0001 A0002); bookings, deductions and LINE notices are automatic.</span></div>
     </div>
     <div class="sub" style="text-align:center">每天 20:00 會 LINE 推明日課表給你；有人預約或取消也會即時通知。</div>
@@ -202,7 +205,7 @@
     document.getElementById('poolCZ').textContent = Number(splitOk ? tp['禪柔體驗課'] : 0) || 0;
     document.getElementById('poolZ').textContent = Number((data.pools || {})['禪柔']) || 0;   // 禪柔 2026-09-13
     // 團體課兩個池：一律顯示（2026-09-13 定案；2026-09-14 由三池合併成兩池）
-    [['poolG2','團課1對2'],['poolG','團體課']].forEach(function(p) {
+    [['poolG2','團課1對2'],['poolG','團體課'],['poolM','墊上皮拉提斯']].forEach(function(p) {
       document.getElementById(p[0]).querySelector('.num').textContent = Number(data.pools[p[1]]) || 0;
     });
     var list = document.getElementById('bookingList');
