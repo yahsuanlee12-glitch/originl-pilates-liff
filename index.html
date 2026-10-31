@@ -157,14 +157,14 @@
   <!-- 老師版「我的課表」（2026-09-16）：網址帶 ?role=coach 進來就走這裡；綁定比對 coaches.phone -->
   <div id="coachView" style="display:none">
     <h1 id="coachGreeting"></h1>
-    <div class="sub">Original Pilates 老師課表</div>
+    <div class="sub" id="coachSub">Original Pilates 老師課表</div>
     <div class="tabs" id="coachTabs"></div>
     <div class="month-sum" id="coachSum"></div>
     <div class="card" id="coachList"></div>
     <!-- 我的假期（2026-09-18 五期）：唯讀。讀不到就整塊不顯示。 -->
     <div class="lv" id="coachLeave" style="display:none"></div>
     <!-- v7.1：顏色對照＋排課規則（2026-09-16 John 定案；與日曆說明欄 CALENDAR_COLOR_LEGEND_ 同一份） -->
-    <div class="legend">
+    <div class="legend" id="coachLegend">
       <h3>日曆顏色對照｜Colour key</h3>
       <div class="row"><span class="sw" style="background:#0b8043"></span>羅勒 Basil（深綠）＝皮拉提斯課 <span class="en">Pilates</span></div>
       <div class="row"><span class="sw" style="background:#f6bf26"></span>香蕉 Banana（黃）＝皮拉提斯體驗課 <span class="en">Pilates trial</span></div>
@@ -175,7 +175,7 @@
       <div class="row"><span class="sw" style="background:#f4511e"></span>橘子 Tangerine（橘）＝墊上皮拉提斯 <span class="en">Mat Pilates 3–6</span></div>
       <div class="rule">系統會依標題自動上色，選錯也會改回。<br>排課：在日曆活動標題打會員編號（例如 A0001，多人用空格隔開），就會自動建預約、扣堂、發 LINE。<br><span class="en">Colours are set automatically from the title. Put member IDs in the event title (e.g. A0001 A0002); bookings, deductions and LINE notices are automatic.</span></div>
     </div>
-    <div class="sub" style="text-align:center">每天 20:00 會 LINE 推明日課表給你；有人預約或取消也會即時通知。</div>
+    <div class="sub" id="coachFoot" style="text-align:center">每天 20:00 會 LINE 推明日課表給你；有人預約或取消也會即時通知。</div>
   </div>
   <div id="fatalError" class="error" style="display:none;text-align:center;padding:40px 16px;"></div>
 <script>
@@ -338,8 +338,8 @@
     document.getElementById('coachView').style.display = 'none';
     document.getElementById('bindView').style.display = 'block';
     if (ROLE === 'coach') {
-      document.querySelector('#bindView h1').textContent = '老師綁定：請先核對身份';
-      document.querySelector('#bindView .sub').textContent = '請輸入你留給店裡的手機號碼（老師資料上的電話）';
+      document.querySelector('#bindView h1').textContent = '員工綁定：請先核對身份';   // v22：行政也用這條連結
+      document.querySelector('#bindView .sub').textContent = '請輸入你留給店裡的手機號碼（員工資料上的電話）';
     }
   }
   // 2026-09-16 v7：改成「本月＋下月」兩個分頁（John 定案），預設停在本月；已上過的課淡化並標「已上」。
@@ -348,7 +348,11 @@
     document.getElementById('loading').style.display = 'none';
     document.getElementById('bindView').style.display = 'none';
     document.getElementById('coachView').style.display = 'block';
-    document.getElementById('coachGreeting').textContent = (data.name || '') + ' 老師你好';
+    // v22 2026-10-31：行政（staffKind＝行政）只看「我的班」，課表／假期／顏色對照都藏起來
+    var isAdm = data.staffKind === '行政';
+    document.getElementById('coachGreeting').textContent = (data.name || '') + (isAdm ? ' 你好' : ' 老師你好');
+    document.getElementById('coachSub').textContent = isAdm ? 'Original Pilates 我的班表' : 'Original Pilates 老師課表';
+    ['coachList', 'coachSum', 'coachLegend', 'coachFoot'].forEach(function(id) { var el = document.getElementById(id); if (el) el.style.display = isAdm ? 'none' : ''; });
     coachData = data;
     var now = new Date();
     var base = data.range && data.range.from ? new Date(data.range.from) : new Date(now.getFullYear(), now.getMonth(), 1);
@@ -427,6 +431,7 @@
     for (var i = 0; i < tabs.length; i++) tabs[i].className = i === coachTab ? 'on' : '';
     var box = document.getElementById('coachList');
     box.innerHTML = '';
+    if (coachData.staffKind === '行政') { document.getElementById('coachSum').textContent = ''; return; }   // v22：行政沒有課表
     var list = (coachData.classes || []).filter(function(c) { var d = new Date(c.startTime); return d.getFullYear() === mo.y && d.getMonth() === mo.m; });
     var done = list.filter(function(c) { return new Date(c.startTime) < now; }).length;
     document.getElementById('coachSum').textContent = list.length ? ((mo.m + 1) + ' 月共 ' + list.length + ' 堂' + (done ? '（已上 ' + done + ' 堂）' : '')) : '';
