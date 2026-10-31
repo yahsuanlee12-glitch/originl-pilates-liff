@@ -29,6 +29,7 @@
     }
     h1 { font-size: 18px; margin: 0 0 4px; }
     .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+    .mid { color: #6b5a48; font-size: 14px; font-weight: 600; margin: 2px 0 6px; letter-spacing: .5px; }
     .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .pool-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .pool { text-align: center; padding: 10px 4px; border-radius: 10px; background: #f3ede4; }
@@ -118,15 +119,16 @@
   </div>
   <div id="mainView" style="display:none">
     <h1 id="greeting"></h1>
+    <div class="mid" id="memberIdLine" style="display:none"></div>   <!-- v21 2026-10-31：顯示會員編號 -->
     <div class="sub">Original Pilates 我的課表</div>
     <div class="card">
       <div class="pool-grid">
         <div class="pool"><div class="num" id="poolA">0</div><div class="label">皮拉提斯課</div></div>
-        <!-- 禪柔（2026-09-13 John 新增課種） -->
-        <div class="pool"><div class="num" id="poolZ">0</div><div class="label">禪柔課</div></div>
+        <!-- 嬋柔（2026-09-13 John 新增課種；2026-10-26 禪柔改名嬋柔，資料鍵名維持「禪柔」） -->
+        <div class="pool"><div class="num" id="poolZ">0</div><div class="label">嬋柔課</div></div>
         <!-- 2026-09-24 體驗課分兩種顯示（John：「我覺得需要分開顯示」）；後端 pools 多兩個鍵 -->
         <div class="pool"><div class="num" id="poolC">0</div><div class="label">皮拉提斯體驗課</div></div>
-        <div class="pool"><div class="num" id="poolCZ">0</div><div class="label">禪柔體驗課</div></div>
+        <div class="pool"><div class="num" id="poolCZ">0</div><div class="label">嬋柔體驗課</div></div>
         <!-- 團體課：一律顯示（2026-09-13 John 定案；原本 0 堂不顯示）。
              2026-09-14 合併：1對3＋1對4 → 「團體課」；團課1對2 不變。 -->
         <div class="pool" id="poolG2"><div class="num">0</div><div class="label">皮拉提斯課 1對2</div></div>
@@ -166,10 +168,10 @@
       <h3>日曆顏色對照｜Colour key</h3>
       <div class="row"><span class="sw" style="background:#0b8043"></span>羅勒 Basil（深綠）＝皮拉提斯課 <span class="en">Pilates</span></div>
       <div class="row"><span class="sw" style="background:#f6bf26"></span>香蕉 Banana（黃）＝皮拉提斯體驗課 <span class="en">Pilates trial</span></div>
-      <div class="row"><span class="sw" style="background:#e67c73"></span>紅鶴 Flamingo（粉紅）＝禪柔體驗課 <span class="en">Gyrokinesis trial</span></div>
+      <div class="row"><span class="sw" style="background:#e67c73"></span>紅鶴 Flamingo（粉紅）＝嬋柔體驗課 <span class="en">Gyrokinesis trial</span></div>
       <div class="row"><span class="sw" style="background:#3f51b5"></span>藍莓 Blueberry（深藍）＝團體課 <span class="en">Group 3–4</span></div>
       <div class="row"><span class="sw" style="background:#039be5"></span>孔雀 Peacock（藍綠）＝皮拉提斯課1對2 <span class="en">Duo</span></div>
-      <div class="row"><span class="sw" style="background:#8e24aa"></span>葡萄 Grape（紫）＝禪柔課 <span class="en">Gyrokinesis</span></div>
+      <div class="row"><span class="sw" style="background:#8e24aa"></span>葡萄 Grape（紫）＝嬋柔課 <span class="en">Gyrokinesis</span></div>
       <div class="row"><span class="sw" style="background:#f4511e"></span>橘子 Tangerine（橘）＝墊上皮拉提斯 <span class="en">Mat Pilates 3–6</span></div>
       <div class="rule">系統會依標題自動上色，選錯也會改回。<br>排課：在日曆活動標題打會員編號（例如 A0001，多人用空格隔開），就會自動建預約、扣堂、發 LINE。<br><span class="en">Colours are set automatically from the title. Put member IDs in the event title (e.g. A0001 A0002); bookings, deductions and LINE notices are automatic.</span></div>
     </div>
@@ -225,6 +227,8 @@
     document.getElementById('bindView').style.display = 'none';
     document.getElementById('mainView').style.display = 'block';
     document.getElementById('greeting').textContent = (data.name || '') + ' 你好';
+    var midEl = document.getElementById('memberIdLine');   // v21：會員編號（後端舊版沒給就不顯示）
+    if (data.memberId) { midEl.textContent = '會員編號：' + data.memberId; midEl.style.display = 'block'; } else { midEl.style.display = 'none'; }
     document.getElementById('poolA').textContent = data.pools['皮拉提斯課／按摩課'] || 0;
     // 2026-09-24 體驗課分兩種；後端還沒更新（沒有拆開的鍵）時，總數先放皮拉提斯體驗課
     var tp = data.pools || {}, splitOk = tp.hasOwnProperty('禪柔體驗課');
