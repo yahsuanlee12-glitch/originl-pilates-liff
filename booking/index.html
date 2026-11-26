@@ -139,7 +139,7 @@
         <label>手機 <span class="req">*</span></label>
         <input id="phone" type="tel" inputmode="tel" maxlength="20" placeholder="09xxxxxxxx" autocomplete="tel">
         <label>生日 <span class="req">*</span></label>
-        <input id="birthday" inputmode="numeric" maxlength="10" placeholder="例：1990/05/20（可填民國年）" autocomplete="bday">
+        <input id="birthday" inputmode="numeric" maxlength="10" placeholder="例：19900520（民國年填 0790520）" autocomplete="bday">
         <label>職業 <span class="req">*</span></label>
         <input id="job" maxlength="40" placeholder="例：上班族（久坐）、護理師、老師" autocomplete="organization-title">
         <button class="submit" id="btn1" type="button" onclick="next1()">下一頁</button>
@@ -318,7 +318,7 @@ function renderTimes(){
 /* 生日轉成 yyyy-mm-dd；接受 1990/5/20、1990-05-20、19900520、民國 79/5/20 */
 function normBirthday(v){
   v = String(v || '').trim().replace(/[年月.\-\s]/g, '/').replace(/日/g, '').replace(/\/+/g, '/').replace(/\/$/, '');
-  var m = v.match(/^(\d{2,4})\/(\d{1,2})\/(\d{1,2})$/) || v.match(/^(\d{4})(\d{2})(\d{2})$/);
+  var m = v.match(/^(\d{2,4})\/(\d{1,2})\/(\d{1,2})$/) || v.match(/^(\d{4})(\d{2})(\d{2})$/) || v.match(/^(\d{3})(\d{2})(\d{2})$/);   // 8 碼西元／7 碼民國（0790520）
   if (!m) return '';
   var y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
   if (y < 200) y += 1911;
@@ -342,7 +342,7 @@ function next1(){
   var f = { name: el('name').value, phone: el('phone').value, birthday: normBirthday(el('birthday').value), job: el('job').value };
   if (!f.name.trim() || !f.phone.trim()) { el('err1').textContent = '請填寫姓名和手機'; return; }
   if (!/^09\d{8}$/.test(f.phone.replace(/[\s-]/g, '')) && !/^\+?\d{8,15}$/.test(f.phone.replace(/[\s-]/g, ''))) { el('err1').textContent = '手機號碼格式不正確'; return; }
-  if (!f.birthday) { el('err1').textContent = '生日格式請填像 1990/05/20'; return; }
+  if (!f.birthday) { el('err1').textContent = '生日請填 8 碼數字，例：19900520（民國年填 7 碼，例：0790520）'; return; }
   if (!f.job.trim()) { el('err1').textContent = '請填寫職業'; return; }
   if (lead) { f.id = lead.id; f.token = lead.token; }
   if (LINEP) { f.lineName = LINEP.name; f.lineUid = LINEP.uid; }
