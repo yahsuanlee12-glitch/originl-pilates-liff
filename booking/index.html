@@ -120,7 +120,6 @@
       <h1 id="title"><small>Original Pilates 初形</small>體驗課預約</h1>
       <div class="divider"></div>
       <p class="intro" id="intro"></p>
-      <p class="muted" id="lineWho" style="display:none;margin-top:6px;font-size:13px"></p>
     </div>
   </header>
 
@@ -411,7 +410,6 @@ function initLine(){
     if (!p) return;
     if (!p.uid) { el('loading').textContent = '讀不到你的 LINE 帳號，請從官方 LINE 重新打開預約連結。'; return; }
     LINEP = p;
-    var w = el('lineWho'); if (w) { w.textContent = '以 LINE「' + (p.name || 'LINE 用戶') + '」預約'; w.style.display = ''; }
     load();
   }).catch(function(){
     el('loading').textContent = 'LINE 登入失敗，請從官方 LINE 重新打開預約連結。';
