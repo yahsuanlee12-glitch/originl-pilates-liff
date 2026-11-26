@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Original Pilates 初形｜體驗課預約</title>
+<!-- booking v2（2026-11-26）：放在 line.optaiwan.com/booking/，從 https://liff.line.me/2011215410-l06m0VwG/booking/ 打開，先 LINE 登入 -->
+<meta name="description" content="Original Pilates 初形 皮拉提斯體驗課線上預約">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@400;500&family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5efe8; --card:#fffcf8; --ink:#4f4038; --muted:#a3928a; --tea:#cbb39c; --deep:#8c705f;
+    --cocoa:#6f5546; --line:#ece2d7; --soft:#f6eee5; --fill:#faf5ef; --full:#f1ebe4;
+    --serif:"Noto Serif TC",serif; --en:"Cormorant Garamond",serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;font-weight:400;line-height:1.75;letter-spacing:.02em;-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+  /* 背景奶茶色光暈 */
+  body::before,body::after{content:"";position:fixed;z-index:0;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none}
+  body::before{width:340px;height:340px;background:#ead9c7;top:-120px;right:-140px}
+  body::after{width:300px;height:300px;background:#efe3d6;bottom:-120px;left:-130px}
+  .wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:28px 18px 56px}
+
+  /* 拱門主視覺 */
+  header{text-align:center;margin-bottom:22px}
+  .arch{background:linear-gradient(180deg,#efe2d4 0%,#f7f0e8 62%,rgba(255,252,248,.6) 100%);border-radius:240px 240px 28px 28px;padding:44px 26px 26px;box-shadow:0 10px 30px rgba(120,92,74,.07)}
+  .logo{display:none;width:104px;height:auto;margin:0 auto 12px}
+  .logo.show{display:block}
+  .brand{letter-spacing:.34em;font-size:11.5px;color:var(--deep);font-weight:500;margin-bottom:8px}
+  .eyebrow{font-family:var(--en);font-style:italic;font-size:15px;letter-spacing:.18em;color:var(--deep);margin:6px 0 2px}
+  h1{font-family:var(--serif);font-size:24px;font-weight:500;margin:4px 0 12px;color:var(--cocoa);letter-spacing:.1em;line-height:1.5}
+  h1 small{display:block;font-family:var(--en);font-size:15px;letter-spacing:.14em;color:var(--deep);font-weight:500;margin-bottom:2px}
+  .divider{width:22px;height:1px;background:var(--tea);margin:0 auto 12px}
+  .intro{color:var(--muted);font-size:13px;margin:0 auto;font-weight:300;max-width:330px;line-height:1.85}
+
+  /* 進度 */
+  .prog{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 4px;font-size:12.5px;color:var(--muted);letter-spacing:.08em}
+  .prog span{display:flex;align-items:center;gap:7px}
+  .prog i{font-style:normal;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--tea);font-family:var(--en);font-size:13px;color:var(--deep);background:var(--card)}
+  .prog span.on{color:var(--cocoa);font-weight:500}
+  .prog span.on i{background:var(--deep);border-color:var(--deep);color:#fff}
+  .prog .bar{width:34px;height:1px;background:var(--tea)}
+
+  /* 卡片 */
+  .card{background:var(--card);border-radius:24px;padding:26px 22px 24px;margin-top:16px;box-shadow:0 8px 28px rgba(120,92,74,.07)}
+  .step{display:flex;align-items:baseline;gap:10px;font-family:var(--serif);font-size:16px;color:var(--cocoa);font-weight:500;letter-spacing:.1em;margin-bottom:14px}
+  .step em{font-family:var(--en);font-style:italic;font-size:20px;color:var(--tea);letter-spacing:0;font-weight:500}
+  .step span{margin-left:auto;font-family:var(--en);font-style:italic;font-size:13px;color:var(--muted);letter-spacing:.14em;font-weight:400}
+  .why{background:var(--soft);border-left:2px solid var(--tea);border-radius:4px 14px 14px 4px;padding:12px 14px;font-size:12.5px;color:var(--deep);font-weight:300;line-height:1.85;margin-bottom:6px}
+
+  /* 日期時段 */
+  .dwrap{display:flex;align-items:flex-start;gap:6px}
+  .arr{flex:0 0 auto;width:34px;height:38px;border:0;background:var(--fill);border-radius:50%;color:var(--deep);font-size:18px;line-height:1;cursor:pointer;font-family:inherit;padding:0}
+  .arr:active{background:var(--soft)}
+  .dates{flex:1;min-width:0;display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--tea) var(--soft)}
+  .dates::-webkit-scrollbar{height:5px}
+  .dates::-webkit-scrollbar-track{background:var(--soft);border-radius:999px}
+  .dates::-webkit-scrollbar-thumb{background:var(--tea);border-radius:999px}
+  .chip{flex:0 0 auto;border:1px solid transparent;background:var(--fill);border-radius:999px;padding:8px 16px;font-size:13.5px;cursor:pointer;color:var(--ink);font-family:inherit;letter-spacing:.04em;transition:all .18s}
+  .chip:hover{border-color:var(--line)}
+  .chip.on{background:var(--deep);color:#fff;box-shadow:0 4px 12px rgba(140,112,95,.25)}
+  .times{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+  .slot{border:1px solid transparent;background:var(--fill);border-radius:16px;padding:12px 6px 10px;text-align:center;cursor:pointer;font-family:var(--en);font-size:19px;font-weight:500;color:var(--ink);letter-spacing:.04em;transition:all .18s;line-height:1.2}
+  .slot small{display:block;font-family:"Noto Sans TC",sans-serif;font-size:10.5px;color:var(--muted);font-weight:300;margin-top:3px;letter-spacing:.1em}
+  .slot:hover{border-color:var(--line)}
+  .slot.on{background:var(--deep);color:#fff;box-shadow:0 4px 12px rgba(140,112,95,.25)}
+  .slot.on small{color:#f0e4d9}
+  .slot.full{background:var(--full);color:#cbbfb5;cursor:not-allowed}
+  .slot.full small{color:#cbbfb5}
+  .undecided{width:100%;margin-top:12px;border:1px dashed var(--tea);background:transparent;border-radius:16px;padding:12px;color:var(--deep);font-size:13.5px;cursor:pointer;font-family:inherit;letter-spacing:.06em;transition:all .18s}
+  .undecided.on{background:var(--deep);border:1px solid var(--deep);color:#fff}
+
+  /* 表單 */
+  label{display:block;font-size:13px;margin:18px 0 7px;color:var(--ink);letter-spacing:.08em}
+  label .req{color:var(--tea)}
+  input,select,textarea{width:100%;font-size:16px;padding:13px 16px;border:1px solid transparent;border-radius:14px;background:var(--fill);color:var(--ink);font-family:inherit;outline:none;transition:border-color .18s,background .18s,box-shadow .18s;-webkit-appearance:none;appearance:none}
+  input::placeholder,textarea::placeholder{color:#c2b4aa;font-weight:300}
+  select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 22px) 52%,calc(100% - 17px) 52%;background-size:5px 5px;background-repeat:no-repeat;padding-right:40px}
+  input:focus,select:focus,textarea:focus{border-color:var(--tea);background:#fff;box-shadow:0 0 0 4px rgba(203,179,156,.18)}
+  textarea{min-height:84px;resize:vertical}
+  .radios{display:flex;flex-wrap:wrap;gap:8px}
+  .agree{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--muted);margin-top:20px;font-weight:300;line-height:1.7}
+  .agree input{width:16px;height:16px;margin-top:3px;flex:0 0 auto;-webkit-appearance:checkbox;appearance:checkbox;accent-color:var(--deep);padding:0}
+  button.submit{width:100%;margin-top:22px;background:linear-gradient(135deg,#9a7d6b,#7f6353);color:#fff;border:0;border-radius:999px;padding:16px;font-size:15.5px;cursor:pointer;font-family:inherit;letter-spacing:.24em;font-weight:500;box-shadow:0 8px 20px rgba(127,99,83,.25);transition:transform .15s,box-shadow .15s}
+  button.submit:active{transform:translateY(1px);box-shadow:0 4px 12px rgba(127,99,83,.25)}
+  button.submit:disabled{opacity:.55;cursor:not-allowed}
+  button.back{width:100%;margin-top:10px;background:none;border:0;color:var(--muted);font-size:13.5px;padding:8px;cursor:pointer;font-family:inherit;letter-spacing:.12em}
+  .err{color:#b0665a;font-size:13px;margin-top:10px;min-height:1em;text-align:center}
+  .muted{color:var(--muted);font-size:12px;font-weight:300}
+  .empty{color:var(--muted);font-size:14px;padding:8px 0}
+
+  /* 成功畫面：票券感 */
+  .done{text-align:center;padding:34px 22px 28px;position:relative}
+  .done .mark{width:76px;margin:0 auto 4px;display:block}
+  .done .big{font-family:var(--serif);font-size:20px;color:var(--cocoa);margin:8px 0 18px;letter-spacing:.16em;font-weight:500}
+  .done table{margin:0 auto;text-align:left;font-size:14px;border-collapse:collapse}
+  .done td{padding:6px 12px}
+  .done td:first-child{color:var(--muted);font-weight:300;letter-spacing:.1em}
+  .bid{margin:22px auto 0;padding:14px 20px;border-top:1px dashed var(--tea);border-bottom:1px dashed var(--tea);display:inline-block;min-width:220px}
+  .bid-l{font-family:var(--en);font-style:italic;font-size:14px;color:var(--muted);letter-spacing:.16em}
+  .bid-v{font-family:var(--en);font-size:28px;color:var(--cocoa);letter-spacing:.08em;font-weight:500;line-height:1.3}
+  .linebtn{display:inline-block;margin-top:8px;padding:11px 24px;border-radius:999px;background:#06C755;color:#fff;text-decoration:none;font-size:14px;letter-spacing:.1em;font-weight:500}
+
+  /* 頁尾 */
+  footer{text-align:center;margin-top:28px;color:var(--muted);font-size:12px;font-weight:300;letter-spacing:.08em}
+  footer #addr::before{content:"ADDRESS";display:block;font-family:var(--en);font-style:italic;font-size:13px;letter-spacing:.2em;color:var(--tea);margin-bottom:2px}
+  .linetop{display:inline-block;margin-top:16px;padding:11px 26px;border-radius:999px;background:#06C755;color:#fff;font-size:14px;font-weight:500;text-decoration:none;letter-spacing:.12em;box-shadow:0 6px 16px rgba(6,199,85,.22)}
+  .linetop:active{opacity:.85}
+  .copy{margin-top:22px;font-family:var(--en);font-size:12px;letter-spacing:.24em;color:#c7b8ad}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="arch">
+      <img id="logo" class="logo" alt="Original Pilates">
+      <div class="brand" id="brand">ORIGINAL PILATES</div>
+      <h1 id="title"><small>Original Pilates 初形</small>體驗課預約</h1>
+      <div class="divider"></div>
+      <p class="intro" id="intro"></p>
+      <p class="muted" id="lineWho" style="display:none;margin-top:6px;font-size:13px"></p>
+    </div>
+  </header>
+
+  <div id="loading" class="card muted">讀取可預約時段中…</div>
+
+  <form id="form" style="display:none" onsubmit="return false">
+    <div class="prog"><span id="pg1" class="on"><i>1</i>基本資料</span><span class="bar"></span><span id="pg2"><i>2</i>時段與需求</span></div>
+
+    <!-- 第一頁 -->
+    <div id="page1">
+      <div class="card">
+        <div class="step"><em>01</em>基本資料<span>Profile</span></div>
+        <div class="why">以下資料是為了讓老師在上課前先了解你的背景與身體狀況，體驗課就能依照你的需求客製安排，給你更貼近自己的體驗。</div>
+        <label>姓名 <span class="req">*</span></label>
+        <input id="name" maxlength="30" autocomplete="name">
+        <label>手機 <span class="req">*</span></label>
+        <input id="phone" type="tel" inputmode="tel" maxlength="20" placeholder="09xxxxxxxx" autocomplete="tel">
+        <label>生日 <span class="req">*</span></label>
+        <input id="birthday" inputmode="numeric" maxlength="10" placeholder="例：1990/05/20（可填民國年）" autocomplete="bday">
+        <label>職業 <span class="req">*</span></label>
+        <input id="job" maxlength="40" placeholder="例：上班族（久坐）、護理師、老師" autocomplete="organization-title">
+        <button class="submit" id="btn1" type="button" onclick="next1()">下一頁</button>
+        <div class="err" id="err1"></div>
+      </div>
+    </div>
+
+    <!-- 第二頁 -->
+    <div id="page2" style="display:none">
+      <div class="card">
+        <div class="step"><em>02</em>選擇日期與時段<span>Schedule</span></div>
+        <div class="dwrap"><button type="button" class="arr" id="prev" aria-label="往前">‹</button><div class="dates" id="dates"></div><button type="button" class="arr" id="next" aria-label="往後">›</button></div>
+        <div class="times" id="times" style="margin-top:14px"></div>
+        <div class="muted" style="margin-top:8px">每個時段名額有限，額滿就無法再選。</div>
+        <button type="button" class="undecided" id="undecided">時間還不確定，之後透過官方 LINE 約</button>
+      </div>
+
+      <div class="card">
+        <div class="step"><em>03</em>體驗需求<span>About You</span></div>
+        <label>是否有器械皮拉提斯經驗 <span class="req">*</span></label>
+        <div class="radios" id="exp"></div>
+        <label>預約體驗課項目 <span class="req">*</span></label>
+        <select id="course"></select>
+        <label>想改善的部位或是訓練目標</label>
+        <textarea id="goal" maxlength="300" placeholder="例：肩頸僵硬、骨盆前傾、產後核心、想改善體態"></textarea>
+        <label>身體是否有特別需要老師注意的地方</label>
+        <textarea id="note" maxlength="300" placeholder="例：舊傷、開過刀、椎間盤突出、懷孕中；沒有可以填「無」"></textarea>
+        <label>從哪裡知道我們</label>
+        <select id="source">
+          <option value="">請選擇</option>
+          <option>Instagram 廣告</option>
+          <option>Facebook 廣告</option>
+          <option>Instagram 貼文／帳號</option>
+          <option>Google 搜尋／地圖</option>
+          <option>朋友介紹</option>
+          <option>經過店門口</option>
+          <option>其他</option>
+        </select>
+        <div class="agree">
+          <input type="checkbox" id="agree">
+          <span>我同意 Original Pilates 使用以上資料聯絡我、安排體驗課程，資料不會提供給第三方。</span>
+        </div>
+        <button class="submit" id="btn" type="button" onclick="send()">送出預約</button>
+        <button class="back" type="button" onclick="showPage(1)">回上一頁</button>
+        <div class="err" id="err"></div>
+      </div>
+    </div>
+  </form>
+
+  <div id="done" class="card done" style="display:none"></div>
+
+  <footer><div id="addr"></div><a id="lineLink" class="linetop" target="_blank" rel="noopener" style="display:none">加入官方 LINE 詢問</a><div class="copy">ORIGINAL PILATES</div></footer>
+</div>
+
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+// 2026-11-26 John：預約頁改成先用 LINE 登入（共用「我的課程」的 LIFF，網址 line.optaiwan.com/booking/），
+// 每筆預約都記下客人的 LINE 名稱和帳號 ID，櫃檯可以在官方 LINE 聊天裡找到這個人。
+var LIFF_ID = '2011215410-l06m0VwG';
+var LINEP = null;   // { name, uid }
+var API = 'https://script.google.com/macros/s/AKfycbzd5s8kS7SXlSFzTFS4Zr871PCic_p3wQnj9UbbIkZJyDCkXIIAvQxlzvJW6KdcoH5r/exec';
+/* 在 Apps Script 頁面內用 google.script.run；在外部網站（GitHub Pages）用 fetch，且不帶 Google 登入資訊，避免多帳號問題 */
+var GAS = (typeof google !== 'undefined' && google.script && google.script.run);
+function call(action, body, ok, fail){
+  var err = function(e){ fail(new Error((e && e.message) ? e.message.replace(/^Error:\s*/, '') : '網路連線不穩，請再試一次')); };
+  if (GAS) {
+    var r = google.script.run.withSuccessHandler(ok).withFailureHandler(err);
+    if (action === 'availability') r.getAvailability(); else if (action === 'step1') r.saveStep1(body); else r.submitBooking(body);
+    return;
+  }
+  var req = action === 'availability'
+    ? fetch(API + '?action=availability', { credentials: 'omit' })
+    : fetch(API, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, form: body }) });
+  req.then(function(r){ return r.json(); })
+    .then(function(j){ j.ok ? ok(j.data) : err(new Error(j.error)); })
+    .catch(function(){ err(null); });
+}
+
+var data = null, selDate = null, selTime = null, selExp = '', lead = null, undecided = false;
+var EXP = ['沒有', '有，練過幾次', '有，固定在練'];
+
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+var logoData = '';
+/* 載入 logo：把白字黑底轉成奶茶可可色、透明背景，並裁掉多餘留白 */
+function loadLogo(url){
+  if (!url) return;
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function(){
+    try {
+      var W = img.naturalWidth, H = img.naturalHeight;
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      var x = c.getContext('2d'); x.drawImage(img, 0, 0);
+      var id = x.getImageData(0, 0, W, H), p = id.data;
+      var minX = W, minY = H, maxX = 0, maxY = 0;
+      for (var i = 0; i < p.length; i += 4) {
+        var lum = (p[i] + p[i+1] + p[i+2]) / 3;
+        var a = Math.max(0, Math.min(1, (lum - 60) / 170));
+        p[i] = 143; p[i+1] = 117; p[i+2] = 100; p[i+3] = Math.round(a * 255);
+        if (a > 0.15) { var k = i / 4, px = k % W, py = (k - px) / W;
+          if (px < minX) minX = px; if (px > maxX) maxX = px; if (py < minY) minY = py; if (py > maxY) maxY = py; }
+      }
+      x.putImageData(id, 0, 0);
+      if (maxX <= minX) return;
+      var pad = Math.round(W * 0.02);
+      minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+      maxX = Math.min(W - 1, maxX + pad); maxY = Math.min(H - 1, maxY + pad);
+      var o = document.createElement('canvas'); o.width = maxX - minX + 1; o.height = maxY - minY + 1;
+      o.getContext('2d').drawImage(c, minX, minY, o.width, o.height, 0, 0, o.width, o.height);
+      logoData = o.toDataURL('image/png');
+      el('logo').src = logoData; el('logo').classList.add('show');
+      el('brand').style.display = 'none';
+    } catch (e) {}
+  };
+  img.src = url;
+}
+
+function load(){
+  call('availability', null, function(d){
+    data = d;
+    el('intro').textContent = d.intro || '';
+    el('addr').textContent = d.address || '';
+    if (/^https:\/\//.test(d.lineUrl || '')) { el('lineLink').href = d.lineUrl; el('lineLink').style.display = ''; }
+    loadLogo(d.logo);
+    el('course').innerHTML = '<option value="">請選擇</option>' + d.courses.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('');
+    el('exp').innerHTML = EXP.map(function(x){ return '<button type="button" class="chip" data-v="' + esc(x) + '">' + esc(x) + '</button>'; }).join('');
+    Array.prototype.forEach.call(el('exp').children, function(b){
+      b.onclick = function(){ selExp = b.dataset.v; Array.prototype.forEach.call(el('exp').children, function(x){ x.classList.toggle('on', x === b); }); };
+    });
+    renderDates();
+    el('loading').style.display = 'none';
+    el('form').style.display = '';
+  }, function(e){
+    el('loading').textContent = '讀取失敗，請稍後再試或直接私訊我們。';
+  });
+}
+
+function renderDates(){
+  var days = data.days;
+  if (!days.length){ el('dates').innerHTML = '<div class="empty">目前沒有可預約的日期，請私訊我們安排。</div>'; el('times').innerHTML=''; return; }
+  if (!selDate || !days.some(function(d){ return d.date === selDate; })) {
+    var firstOpen = days.filter(function(d){ return d.slots.some(function(s){ return !s.full; }); })[0] || days[0];
+    selDate = firstOpen.date;
+  }
+  var keep = el('dates').scrollLeft;
+  el('dates').innerHTML = days.map(function(d){
+    return '<button type="button" class="chip' + (d.date === selDate ? ' on' : '') + '" data-d="' + d.date + '">' + esc(d.label) + '</button>';
+  }).join('');
+  Array.prototype.forEach.call(el('dates').children, function(b){
+    b.onclick = function(){ selDate = b.dataset.d; selTime = null; renderDates(); };
+  });
+  var box = el('dates'); box.scrollLeft = keep;
+  var on = box.querySelector('.on');
+  if (on) { var l = on.offsetLeft - box.offsetLeft; if (l < box.scrollLeft || l + on.offsetWidth > box.scrollLeft + box.clientWidth) box.scrollLeft = l - 8; }
+  renderTimes();
+}
+
+function renderTimes(){
+  var day = data.days.filter(function(d){ return d.date === selDate; })[0];
+  if (!day){ el('times').innerHTML = ''; return; }
+  el('times').innerHTML = day.slots.map(function(s){
+    var full = s.full;
+    var cls = 'slot' + (full ? ' full' : '') + (s.time === selTime ? ' on' : '');
+    return '<button type="button" class="' + cls + '" data-t="' + s.time + '"' + (full ? ' disabled' : '') + '>' +
+      s.time + '<small>' + (full ? '已額滿' : '可預約') + '</small></button>';
+  }).join('');
+  Array.prototype.forEach.call(el('times').children, function(b){
+    if (b.disabled) return;
+    b.onclick = function(){ selTime = b.dataset.t; undecided = false; renderTimes(); };
+  });
+  el('undecided').classList.toggle('on', undecided);
+}
+
+/* 生日轉成 yyyy-mm-dd；接受 1990/5/20、1990-05-20、19900520、民國 79/5/20 */
+function normBirthday(v){
+  v = String(v || '').trim().replace(/[年月.\-\s]/g, '/').replace(/日/g, '').replace(/\/+/g, '/').replace(/\/$/, '');
+  var m = v.match(/^(\d{2,4})\/(\d{1,2})\/(\d{1,2})$/) || v.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!m) return '';
+  var y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+  if (y < 200) y += 1911;
+  var dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return '';
+  if (y < 1920 || dt > new Date()) return '';
+  return y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2);
+}
+
+function showPage(n){
+  el('page1').style.display = n === 1 ? '' : 'none';
+  el('page2').style.display = n === 2 ? '' : 'none';
+  el('pg1').classList.toggle('on', n === 1); el('pg2').classList.toggle('on', n === 2);
+  window.scrollTo(0, 0);
+  if (n === 2) renderDates();
+}
+
+/* 第一頁：按「下一頁」就先存到後台 */
+function next1(){
+  el('err1').textContent = '';
+  var f = { name: el('name').value, phone: el('phone').value, birthday: normBirthday(el('birthday').value), job: el('job').value };
+  if (!f.name.trim() || !f.phone.trim()) { el('err1').textContent = '請填寫姓名和手機'; return; }
+  if (!/^09\d{8}$/.test(f.phone.replace(/[\s-]/g, '')) && !/^\+?\d{8,15}$/.test(f.phone.replace(/[\s-]/g, ''))) { el('err1').textContent = '手機號碼格式不正確'; return; }
+  if (!f.birthday) { el('err1').textContent = '生日格式請填像 1990/05/20'; return; }
+  if (!f.job.trim()) { el('err1').textContent = '請填寫職業'; return; }
+  if (lead) { f.id = lead.id; f.token = lead.token; }
+  if (LINEP) { f.lineName = LINEP.name; f.lineUid = LINEP.uid; }
+  el('btn1').disabled = true; el('btn1').textContent = '儲存中…';
+  call('step1', f, function(r){
+    lead = r;
+    el('btn1').disabled = false; el('btn1').textContent = '下一頁';
+    showPage(2);
+  }, function(e){
+    el('btn1').disabled = false; el('btn1').textContent = '下一頁';
+    el('err1').textContent = e.message;
+  });
+}
+
+function send(){
+  el('err').textContent = '';
+  if (!undecided && (!selDate || !selTime)) { el('err').textContent = '請選擇日期和時段，或選「時間還不確定」'; return; }
+  var f = {
+    date: undecided ? '' : selDate, time: undecided ? '' : selTime, undecided: undecided,
+    name: el('name').value, phone: el('phone').value,
+    birthday: normBirthday(el('birthday').value), job: el('job').value,
+    course: el('course').value, experience: selExp, source: el('source').value,
+    goal: el('goal').value, note: el('note').value, agree: el('agree').checked
+  };
+  if (lead) { f.id = lead.id; f.token = lead.token; }
+  if (LINEP) { f.lineName = LINEP.name; f.lineUid = LINEP.uid; }
+  if (!f.experience) { el('err').textContent = '請選擇是否有器械皮拉提斯經驗'; return; }
+  if (!f.course) { el('err').textContent = '請選擇預約體驗課項目'; return; }
+  if (!f.agree) { el('err').textContent = '請勾選同意個人資料使用說明'; return; }
+  el('btn').disabled = true; el('btn').textContent = '送出中…';
+  call('submit', f, function(r){
+    el('form').style.display = 'none';
+    el('done').style.display = '';
+    el('done').innerHTML =
+      (logoData ? '<img class="mark" src="' + logoData + '" alt="">' : '') + '<div class="big">預約成功</div>' +
+      '<table><tr><td>姓名</td><td>' + esc(r.name) + '</td></tr>' +
+      (r.undecided ? '<tr><td>時間</td><td>之後透過官方 LINE 約</td></tr>' :
+        '<tr><td>日期</td><td>' + esc(r.label) + '</td></tr><tr><td>時段</td><td>' + esc(r.time) + '</td></tr>') +
+      '<tr><td>地點</td><td>' + esc(r.address || '') + '</td></tr>' +
+      '</table>' +
+      '<div class="bid"><div class="bid-l">預約編號</div><div class="bid-v">' + esc(r.id) + '</div></div>' +
+      '<p class="muted" style="margin-top:14px">請截圖保存預約編號。<br>' + (r.undecided ? '請加入官方 LINE，提供預約編號和方便的時間，我們會幫你安排。' : '如需更改時間或有任何問題，都可以提供預約編號至官方 LINE 與我們聯繫。') + '</p>' +
+      (/^https:\/\//.test(data.lineUrl || '') ? '<a class="linebtn" href="' + esc(data.lineUrl) + '" target="_blank" rel="noopener">前往官方 LINE</a>' : '') +
+      '<p class="muted" style="margin-top:12px">我們會再聯絡你確認，記得穿方便活動的衣服、帶止滑襪。</p>';
+    window.scrollTo(0, 0);
+  }, function(e){
+    el('btn').disabled = false; el('btn').textContent = '送出預約';
+    el('err').textContent = e.message;
+    // 重新讀取名額
+    call('availability', null, function(d){ data = d; selTime = null; renderDates(); }, function(){});
+  });
+}
+
+el('undecided').onclick = function(){ undecided = !undecided; if (undecided) selTime = null; renderTimes(); };
+el('prev').onclick = function(){ el('dates').scrollBy({ left: -220, behavior: 'smooth' }); };
+el('next').onclick = function(){ el('dates').scrollBy({ left: 220, behavior: 'smooth' }); };
+
+// 先用 LINE 登入拿到 LINE 名稱／帳號 ID，再載入表單（沒登入就導去 LINE 登入；登入失敗不給填）
+function initLine(){
+  if (typeof liff === 'undefined') { el('loading').textContent = '請從官方 LINE 裡打開預約連結。'; return; }
+  liff.init({ liffId: LIFF_ID }).then(function(){
+    if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return null; }
+    return liff.getProfile().then(function(p){ return { name: p.displayName || '', uid: p.userId || '' }; })
+      .catch(function(){ var d = liff.getDecodedIDToken() || {}; return { name: d.name || '', uid: d.sub || '' }; });
+  }).then(function(p){
+    if (!p) return;
+    if (!p.uid) { el('loading').textContent = '讀不到你的 LINE 帳號，請從官方 LINE 重新打開預約連結。'; return; }
+    LINEP = p;
+    var w = el('lineWho'); if (w) { w.textContent = '以 LINE「' + (p.name || 'LINE 用戶') + '」預約'; w.style.display = ''; }
+    load();
+  }).catch(function(){
+    el('loading').textContent = 'LINE 登入失敗，請從官方 LINE 重新打開預約連結。';
+  });
+}
+initLine();
+</script>
+</body>
+</html>
